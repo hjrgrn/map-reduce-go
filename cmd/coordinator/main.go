@@ -38,8 +38,18 @@ func main() {
 }
 
 type Coordinator struct {
-	// XXX: definition
+	MapTasks []MapTask
+}
 
+// XXX:
+func build_coordinator(files []string) Coordinator {
+	tasks := make([]MapTask, len(files))
+	for i := range files {
+		task := NewMapTask(files[i])
+		tasks = append(tasks, task)
+	}
+
+	return Coordinator{MapTasks: tasks}
 }
 
 // main calls Done() periodically to find out
@@ -57,6 +67,46 @@ func (c *Coordinator) Example(args *mr.ExampleArgs, reply *mr.ExampleReply) erro
 	reply.Y = args.X + 1
 	return nil
 }
+
+// XXX:
+type MapTask struct {
+	// TODO: we are in the same filesystem at the moment
+	path  MapTaskFilePath
+	state TaskState
+}
+
+func (mt *MapTask) NextStage() {
+	if mt.state == Unassigned {
+		mt.state = Assigned
+	} else if mt.state == Assigned {
+		mt.state = Done
+	}
+	// TODO: maybe an error
+}
+
+func (mt *MapTask) WorkerFailed() {
+	if mt.state == Assigned {
+		mt.state = Unassigned
+	}
+	// TODO: maybe an error
+}
+
+type TaskState int
+
+const (
+	Unassigned TaskState = iota
+	Assigned
+	Done
+)
+
+func NewMapTask(path string) MapTask {
+	return MapTask{
+		path:  MapTaskFilePath(path),
+		state: Unassigned,
+	}
+}
+
+type MapTaskFilePath string
 
 // Create a Coordinator.
 // main calls this function.
