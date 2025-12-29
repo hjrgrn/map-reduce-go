@@ -13,13 +13,16 @@ package main
 // ```
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"mapreduce/pkg/mr"
 	"net"
 	"net/http"
+	"net/netip"
 	"net/rpc"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -38,18 +41,19 @@ func main() {
 }
 
 type Coordinator struct {
-	MapTasks []MapTask
+	mutex     sync.Mutex
+	map_tasks map[MapTaskFilePath]MapTask
 }
 
 // XXX:
 func build_coordinator(files []string) Coordinator {
-	tasks := make([]MapTask, len(files))
+	tasks := make(map[MapTaskFilePath]MapTask, len(files))
 	for i := range files {
 		task := NewMapTask(files[i])
-		tasks = append(tasks, task)
+		tasks[task.path] = task
 	}
 
-	return Coordinator{MapTasks: tasks}
+	return Coordinator{map_tasks: tasks}
 }
 
 // main calls Done() periodically to find out
@@ -73,24 +77,44 @@ type MapTask struct {
 	// TODO: we are in the same filesystem at the moment
 	path  MapTaskFilePath
 	state TaskState
+	addr  *netip.Addr
 }
 
-func (mt *MapTask) NextStage() {
-	if mt.state == Unassigned {
-		mt.state = Assigned
+// XXX:
+func (mt *MapTask) Assign(addr *netip.Addr) error {
+	if mt.state == Done {
+		return errors.New("The task is completed.")
 	} else if mt.state == Assigned {
-		mt.state = Done
+		return errors.New("The task is already assigned.")
 	}
-	// TODO: maybe an error
+	mt.state = Assigned
+	mt.addr = addr
+	return nil
 }
 
-func (mt *MapTask) WorkerFailed() {
-	if mt.state == Assigned {
-		mt.state = Unassigned
+// XXX:
+func (mt *MapTask) Unassign() error {
+	if mt.state == Done {
+		return errors.New("The task is completed.")
+	} else if mt.state == Unassigned {
+		return errors.New("The task is already unassigned.")
 	}
-	// TODO: maybe an error
+	mt.state = Unassigned
+	mt.addr = nil
+	return nil
 }
 
+// XXX:
+func (mt *MapTask) Done() error {
+	if mt.state == Done {
+		return errors.New("The task is completed.")
+	}
+	mt.state = Done
+	mt.addr = nil
+	return nil
+}
+
+// XXX:
 type TaskState int
 
 const (
@@ -103,6 +127,7 @@ func NewMapTask(path string) MapTask {
 	return MapTask{
 		path:  MapTaskFilePath(path),
 		state: Unassigned,
+		addr:  nil,
 	}
 }
 
