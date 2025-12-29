@@ -42,15 +42,15 @@ func main() {
 
 type Coordinator struct {
 	mutex     sync.Mutex
-	map_tasks map[mr.MapTaskFilePath]MapTask
+	map_tasks map[mr.MapTaskFilePath]*MapTask
 }
 
 // XXX:
 func build_coordinator(files []string) Coordinator {
-	tasks := make(map[mr.MapTaskFilePath]MapTask, len(files))
+	tasks := make(map[mr.MapTaskFilePath]*MapTask, len(files))
 	for i := range files {
 		task := NewMapTask(files[i])
-		tasks[task.path] = task
+		tasks[task.path] = &task
 	}
 
 	return Coordinator{map_tasks: tasks}
@@ -82,7 +82,6 @@ func (c *Coordinator) GetMapTask(args *mr.GetMapTaskArgs, reply *mr.GetMapTaskRe
 			reply.Path = k
 			assigned = true
 			v.Assign(&args.Addr)
-			// TODO: avoid copy
 			c.map_tasks[k] = v
 			reply.MapIsCompleted = false
 			break
