@@ -11,6 +11,7 @@ import (
 	"log"
 	"mapreduce/pkg/mr"
 	"mapreduce/pkg/utils"
+	"net/netip"
 	"net/rpc"
 	"os"
 )
@@ -65,12 +66,31 @@ func CallExample() {
 	}
 }
 
-// Send an RPC request to the coordinator, wait for the response.
-// usually returns true.
-// returns false if something goes wrong.
+// XXX:
+func CallGetMapTask() (mr.GetMapTaskReply, bool) {
+	// declare an argument structure.
+	args := mr.GetMapTaskArgs{
+		// TODO: placeholder
+		Addr: netip.AddrFrom4([4]byte{127, 0, 0, 1}),
+	}
+
+	// declare a reply structure.
+	reply := mr.GetMapTaskReply{}
+
+	// send the RPC request, wait for the reply.
+	ok := call("Coordinator.GetMapTask", &args, &reply)
+
+	return reply, ok
+}
+
+// Send an RPC request to the coordinator and wait for the response.
+// If it fails to contact the coordinator, the program will crash.
+// If something else goes wrong, it returns false.
+// If successful, it returns true.
 func call(rpcname string, args any, reply any) bool {
 	c, err := rpc.DialHTTP("tcp", "127.0.0.1"+":5000")
 	if err != nil {
+		// TODO: graceful handling of DialHTTP failure
 		log.Fatal("dialing:", err)
 	}
 	defer c.Close()
