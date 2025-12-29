@@ -42,12 +42,12 @@ func main() {
 
 type Coordinator struct {
 	mutex     sync.Mutex
-	map_tasks map[MapTaskFilePath]MapTask
+	map_tasks map[mr.MapTaskFilePath]MapTask
 }
 
 // XXX:
 func build_coordinator(files []string) Coordinator {
-	tasks := make(map[MapTaskFilePath]MapTask, len(files))
+	tasks := make(map[mr.MapTaskFilePath]MapTask, len(files))
 	for i := range files {
 		task := NewMapTask(files[i])
 		tasks[task.path] = task
@@ -73,9 +73,32 @@ func (c *Coordinator) Example(args *mr.ExampleArgs, reply *mr.ExampleReply) erro
 }
 
 // XXX:
+func (c *Coordinator) GetMapTask(args *mr.GetMapTaskArgs, reply *mr.GetMapTaskReply) error {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	assigned := false
+	for k, v := range c.map_tasks {
+		if v.state == Unassigned {
+			reply.Path = k
+			assigned = true
+			v.Assign(&args.Addr)
+			// TODO: avoid copy
+			c.map_tasks[k] = v
+			reply.MapIsCompleted = false
+			break
+		}
+	}
+	if !assigned {
+		reply.MapIsCompleted = true
+	}
+
+	return nil
+}
+
+// XXX:
 type MapTask struct {
 	// TODO: we are in the same filesystem at the moment
-	path  MapTaskFilePath
+	path  mr.MapTaskFilePath
 	state TaskState
 	addr  *netip.Addr
 }
@@ -125,13 +148,11 @@ const (
 
 func NewMapTask(path string) MapTask {
 	return MapTask{
-		path:  MapTaskFilePath(path),
+		path:  mr.MapTaskFilePath(path),
 		state: Unassigned,
 		addr:  nil,
 	}
 }
-
-type MapTaskFilePath string
 
 // Create a Coordinator.
 // main calls this function.

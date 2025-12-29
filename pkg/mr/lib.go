@@ -1,11 +1,13 @@
 package mr
 
+import "net/netip"
+
 //
 // RPC definitions.
 //
 
 //
-// example RPC arguments
+// Example RPC arguments
 //
 
 type ExampleArgs struct {
@@ -15,3 +17,19 @@ type ExampleArgs struct {
 type ExampleReply struct {
 	Y int
 }
+
+//
+// GetMapTask RPC Arguments
+//
+
+type GetMapTaskArgs struct {
+	Addr netip.Addr
+}
+
+type GetMapTaskReply struct {
+	Path MapTaskFilePath
+	MapIsCompleted  bool
+}
+
+// XXX:
+type MapTaskFilePath string
