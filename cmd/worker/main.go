@@ -82,6 +82,7 @@ func (w *Worker) Work(mapf func(string, string) utils.ByKey,
 					}
 					file.Close()
 					kva := mapf(filename, string(content))
+					CallMapCompleted(reply.Path)
 					// TODO: save file, open a server to communicate the result to reduce, tell
 					// coordinator the map operation is completed
 					for v := range kva {
@@ -151,6 +152,17 @@ func CallGetMapTask() (mr.GetMapTaskReply, bool) {
 
 	// send the RPC request, wait for the reply.
 	ok := call("Coordinator.GetMapTask", &args, &reply)
+
+	return reply, ok
+}
+
+// XXX:
+func CallMapCompleted(filename mr.MapTaskFilePath) (mr.MapCompletedReply, bool) {
+	args := mr.MapCompletedArgs{
+		Path: filename,
+	}
+	reply := mr.MapCompletedReply{}
+	ok := call("Coordinator.MapCompleted", &args, &reply)
 
 	return reply, ok
 }

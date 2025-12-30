@@ -74,6 +74,7 @@ func (c *Coordinator) Example(args *mr.ExampleArgs, reply *mr.ExampleReply) erro
 
 // XXX:
 func (c *Coordinator) GetMapTask(args *mr.GetMapTaskArgs, reply *mr.GetMapTaskReply) error {
+	// TODO: add a timer
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	assigned := false
@@ -91,6 +92,14 @@ func (c *Coordinator) GetMapTask(args *mr.GetMapTaskArgs, reply *mr.GetMapTaskRe
 		reply.MapIsCompleted = true
 	}
 
+	return nil
+}
+
+// XXX:
+func (c *Coordinator) MapCompleted(args *mr.MapCompletedArgs, reply *mr.MapCompletedReply) error {
+	c.mutex.Lock()
+	c.map_tasks[args.Path].state = Done
+	defer c.mutex.Unlock()
 	return nil
 }
 
