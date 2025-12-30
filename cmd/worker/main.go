@@ -8,12 +8,14 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"mapreduce/pkg/mr"
 	"mapreduce/pkg/utils"
 	"net/netip"
 	"net/rpc"
 	"os"
+	"sync"
 )
 
 func main() {
@@ -24,7 +26,77 @@ func main() {
 
 	mapf, reducef := loadApp(os.Args[1])
 
-	Worker(mapf, reducef)
+	worker := Worker{}
+
+	worker.Work(mapf, reducef)
+}
+
+// XXX:
+type Worker struct {
+	mutex sync.Mutex
+	state WorkerState
+}
+
+// XXX:
+type WorkerState int
+
+const (
+	WorkingOnMap WorkerState = iota
+	WorkingOnReduce
+	Done
+)
+
+// XXX:
+func (w *Worker) Work(mapf func(string, string) utils.ByKey,
+	reducef func(string, []string) string) {
+	for {
+		w.mutex.Lock()
+		state := w.state
+		w.mutex.Unlock()
+
+		if state == Done {
+			break
+		} else if state == WorkingOnMap {
+			go func() {
+				reply, ok := CallGetMapTask()
+				for !ok {
+					// TODO: wait a certain amount of time before retrying, retry only a certain
+					// amount of time
+					reply, ok = CallGetMapTask()
+				}
+
+				if reply.MapIsCompleted {
+					w.mutex.Lock()
+					w.state = WorkingOnReduce
+					w.mutex.Unlock()
+				} else {
+					// TODO: we are working on the same filesystem at the moment
+					filename := string(reply.Path)
+					file, err := os.Open(filename)
+					if err != nil {
+						log.Fatalf("cannot open %v", filename)
+					}
+					content, err := io.ReadAll(file)
+					if err != nil {
+						log.Fatalf("cannot read %v", filename)
+					}
+					file.Close()
+					kva := mapf(filename, string(content))
+					// TODO: save file, open a server to communicate the result to reduce, tell
+					// coordinator the map operation is completed
+					for v := range kva {
+						fmt.Println(v)
+					}
+				}
+			}()
+		} else {
+			// TODO:
+			w.mutex.Lock()
+			w.state = Done
+			w.mutex.Unlock()
+		}
+	}
+
 }
 
 // Load the application Map and Reduce functions
@@ -90,7 +162,7 @@ func CallGetMapTask() (mr.GetMapTaskReply, bool) {
 func call(rpcname string, args any, reply any) bool {
 	c, err := rpc.DialHTTP("tcp", "127.0.0.1"+":5000")
 	if err != nil {
-		// TODO: graceful handling of DialHTTP failure
+		// TODO: graceful handling of DialHTTP failure, graceful shutdown
 		log.Fatal("dialing:", err)
 	}
 	defer c.Close()
@@ -102,14 +174,6 @@ func call(rpcname string, args any, reply any) bool {
 
 	fmt.Println(err)
 	return false
-}
-
-// main calls this function.
-func Worker(mapf func(string, string) utils.ByKey,
-	reducef func(string, []string) string) {
-
-	// XXX:
-
 }
 
 // XXX: Make MR applications plugins
