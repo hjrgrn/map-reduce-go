@@ -22,17 +22,25 @@ import (
 	"net/netip"
 	"net/rpc"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 )
 
 func main() {
+	usage := "Usage: coordinator buckets inputfiles...\n"
 	if len(os.Args) < 2 {
-		fmt.Fprintf(os.Stderr, "Usage: coordinator inputfiles...\n")
+		fmt.Fprintf(os.Stderr, usage)
 		os.Exit(1)
 	}
 
-	m := MakeCoordinator(os.Args[1:], 10)
+	buckets, err := strconv.Atoi(os.Args[1])
+	if err != nil {
+		fmt.Fprintf(os.Stderr, usage)
+		os.Exit(1)
+	}
+
+	m := MakeCoordinator(os.Args[2:], buckets)
 	for m.done() == false {
 		time.Sleep(time.Second)
 	}
@@ -43,17 +51,18 @@ func main() {
 type Coordinator struct {
 	mutex     sync.Mutex
 	map_tasks map[mr.MapTaskFilePath]*MapTask
+	buckets   int
 }
 
 // XXX:
-func build_coordinator(files []string) Coordinator {
+func build_coordinator(files []string, buckets int) Coordinator {
 	tasks := make(map[mr.MapTaskFilePath]*MapTask, len(files))
 	for i := range files {
 		task := NewMapTask(files[i])
 		tasks[task.path] = &task
 	}
 
-	return Coordinator{map_tasks: tasks}
+	return Coordinator{map_tasks: tasks, buckets: buckets}
 }
 
 // main calls Done() periodically to find out
@@ -81,6 +90,7 @@ func (c *Coordinator) GetMapTask(args *mr.GetMapTaskArgs, reply *mr.GetMapTaskRe
 	for k, v := range c.map_tasks {
 		if v.state == Unassigned {
 			reply.Path = k
+			reply.Buckets = c.buckets
 			assigned = true
 			v.Assign()
 			c.map_tasks[k] = v
@@ -165,8 +175,8 @@ func NewMapTask(path string) MapTask {
 // Create a Coordinator.
 // main calls this function.
 // nReduce is the number of reduce tasks to use.
-func MakeCoordinator(files []string, nReduce int) *Coordinator {
-	c := Coordinator{}
+func MakeCoordinator(files []string, buckets int) *Coordinator {
+	c := build_coordinator(files, buckets)
 
 	// XXX:
 

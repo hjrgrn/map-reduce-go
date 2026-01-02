@@ -25,6 +25,7 @@ type GetMapTaskArgs struct{}
 type GetMapTaskReply struct {
 	Path           MapTaskFilePath
 	MapIsCompleted bool
+	Buckets        int
 }
 
 //
