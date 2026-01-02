@@ -108,7 +108,7 @@ func (c *Coordinator) GetMapTask(args *mr.GetMapTaskArgs, reply *mr.GetMapTaskRe
 // XXX:
 func (c *Coordinator) MapCompleted(args *mr.MapCompletedArgs, reply *mr.MapCompletedReply) error {
 	c.mutex.Lock()
-	c.map_tasks[args.Path].state = Done
+	c.map_tasks[args.Path].Done(args.Addr)
 	defer c.mutex.Unlock()
 	return nil
 }
@@ -118,7 +118,7 @@ type MapTask struct {
 	// TODO: we are in the same filesystem at the moment
 	path  mr.MapTaskFilePath
 	state TaskState
-	addr  *netip.Addr
+	addr  *netip.AddrPort
 }
 
 // XXX:
@@ -146,12 +146,12 @@ func (mt *MapTask) Unassign() error {
 }
 
 // XXX:
-func (mt *MapTask) Done() error {
+func (mt *MapTask) Done(addr netip.AddrPort) error {
 	if mt.state == Done {
 		return errors.New("The task is completed.")
 	}
 	mt.state = Done
-	mt.addr = nil
+	mt.addr = &addr
 	return nil
 }
 

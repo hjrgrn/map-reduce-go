@@ -13,6 +13,7 @@ import (
 	"log"
 	"mapreduce/pkg/mr"
 	"mapreduce/pkg/utils"
+	"net/netip"
 	"net/rpc"
 	"os"
 	"strconv"
@@ -83,7 +84,6 @@ func (w *Worker) Work(mapf func(string, string) utils.ByKey,
 					}
 					file.Close()
 					kva := mapf(filename, string(content))
-					CallMapCompleted(reply.Path)
 
 					// save files
 					buckets := make(map[int]Bucket, reply.Buckets)
@@ -100,8 +100,14 @@ func (w *Worker) Work(mapf func(string, string) utils.ByKey,
 						writer.Flush()
 					}
 
-
 					// TODO: open a server
+
+					// TODO: placeholder
+					addr := netip.MustParseAddr("127.0.0.1")
+					port := uint16(0)
+					placeholder_addr := netip.AddrPortFrom(addr, port)
+
+					CallMapCompleted(reply.Path, placeholder_addr)
 				}
 			}()
 		} else {
@@ -191,9 +197,10 @@ func CallGetMapTask() (mr.GetMapTaskReply, bool) {
 }
 
 // XXX:
-func CallMapCompleted(filename mr.MapTaskFilePath) (mr.MapCompletedReply, bool) {
+func CallMapCompleted(filename mr.MapTaskFilePath, addr netip.AddrPort) (mr.MapCompletedReply, bool) {
 	args := mr.MapCompletedArgs{
 		Path: filename,
+		Addr: addr,
 	}
 	reply := mr.MapCompletedReply{}
 	ok := call("Coordinator.MapCompleted", &args, &reply)

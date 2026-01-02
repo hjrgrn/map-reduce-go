@@ -1,5 +1,7 @@
 package mr
 
+import "net/netip"
+
 //
 // RPC definitions.
 //
@@ -34,6 +36,7 @@ type GetMapTaskReply struct {
 
 type MapCompletedArgs struct {
 	Path MapTaskFilePath
+	Addr netip.AddrPort
 }
 
 type MapCompletedReply struct{}
