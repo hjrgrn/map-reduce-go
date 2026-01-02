@@ -14,6 +14,7 @@ import (
 	"mapreduce/pkg/mr"
 	"mapreduce/pkg/utils"
 	"math/rand"
+	"net"
 	"net/netip"
 	"net/rpc"
 	"os"
@@ -102,14 +103,18 @@ func (w *Worker) Work(mapf func(string, string) utils.ByKey,
 						writer.Flush()
 					}
 
-					// TODO: open a server
+					// TODO: Setup RPCs for other clients
 
-					// TODO: placeholder
-					addr := netip.MustParseAddr("127.0.0.1")
-					port := uint16(0)
-					placeholder_addr := netip.AddrPortFrom(addr, port)
+					l, e := net.Listen("tcp", ":0")
+					if e != nil {
+						log.Fatal("listen error:", e)
+					}
+					addr := l.Addr().(*net.TCPAddr)
+					addr_port := addr.AddrPort()
+					CallMapCompleted(reply.Path, addr_port)
 
-					CallMapCompleted(reply.Path, placeholder_addr)
+					// TODO: delete this
+					l.Close()
 				}
 			}()
 		} else {
