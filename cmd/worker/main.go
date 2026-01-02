@@ -14,6 +14,7 @@ import (
 	"mapreduce/pkg/utils"
 	"net/rpc"
 	"os"
+	"strconv"
 	"sync"
 )
 
@@ -82,6 +83,12 @@ func (w *Worker) Work(mapf func(string, string) utils.ByKey,
 					file.Close()
 					kva := mapf(filename, string(content))
 					CallMapCompleted(reply.Path)
+					// save file
+					buckets := make(map[int]Bucket, reply.Buckets)
+					for i := range reply.Buckets {
+						buckets[i] = NewBucket(i)
+					}
+
 					// TODO: save file, open a server to communicate the result to reduce
 					for v := range kva {
 						fmt.Println(v)
@@ -96,6 +103,24 @@ func (w *Worker) Work(mapf func(string, string) utils.ByKey,
 		}
 	}
 
+}
+
+type Bucket struct {
+	Id   int
+	Path string
+	File *os.File
+}
+
+func NewBucket(id int) Bucket {
+	// TODO: Path
+	path := "./instace/" + strconv.Itoa(os.Getegid()) + "-" + strconv.Itoa(id)
+	file, err := os.Open(path)
+	// TODO: maybe use encoding/gob
+	if err != nil {
+		fmt.Printf("Fatal error opening a file: %v", err)
+		os.Exit(2)
+	}
+	return Bucket{Id: id, Path: path, File: file}
 }
 
 // Load the application Map and Reduce functions
