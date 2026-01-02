@@ -7,6 +7,7 @@ package main
 //
 
 import (
+	"encoding/csv"
 	"fmt"
 	"io"
 	"log"
@@ -83,16 +84,24 @@ func (w *Worker) Work(mapf func(string, string) utils.ByKey,
 					file.Close()
 					kva := mapf(filename, string(content))
 					CallMapCompleted(reply.Path)
-					// save file
+
+					// save files
 					buckets := make(map[int]Bucket, reply.Buckets)
 					for i := range reply.Buckets {
 						buckets[i] = NewBucket(i)
 					}
-
-					// TODO: save file, open a server to communicate the result to reduce
-					for v := range kva {
-						fmt.Println(v)
+					for _, kv := range kva {
+						// TODO: error handling
+						index, _ := strconv.Atoi(kv.Key)
+						hash := index % reply.Buckets
+						writer := buckets[hash].Writer
+						// TODO: error handling
+						writer.Write([]string{kv.Key, kv.Value})
+						writer.Flush()
 					}
+
+
+					// TODO: open a server
 				}
 			}()
 		} else {
@@ -101,26 +110,31 @@ func (w *Worker) Work(mapf func(string, string) utils.ByKey,
 			w.state = Done
 			w.mutex.Unlock()
 		}
+		// TODO: close buckets files
 	}
 
 }
 
 type Bucket struct {
-	Id   int
-	Path string
-	File *os.File
+	Id     int
+	Path   string
+	File   *os.File
+	Writer *csv.Writer
+	Reader *csv.Reader
 }
 
 func NewBucket(id int) Bucket {
-	// TODO: Path
+	// TODO: Path, maybe use "/var/tmp"
 	path := "./instace/" + strconv.Itoa(os.Getegid()) + "-" + strconv.Itoa(id)
-	file, err := os.Open(path)
+	file, err := os.Create(path)
+	writer := csv.NewWriter(file)
+	reader := csv.NewReader(file)
 	// TODO: maybe use encoding/gob
 	if err != nil {
 		fmt.Printf("Fatal error opening a file: %v", err)
 		os.Exit(2)
 	}
-	return Bucket{Id: id, Path: path, File: file}
+	return Bucket{Id: id, Path: path, File: file, Writer: writer, Reader: reader}
 }
 
 // Load the application Map and Reduce functions
