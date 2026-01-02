@@ -12,7 +12,6 @@ import (
 	"log"
 	"mapreduce/pkg/mr"
 	"mapreduce/pkg/utils"
-	"net/netip"
 	"net/rpc"
 	"os"
 	"sync"
@@ -83,8 +82,7 @@ func (w *Worker) Work(mapf func(string, string) utils.ByKey,
 					file.Close()
 					kva := mapf(filename, string(content))
 					CallMapCompleted(reply.Path)
-					// TODO: save file, open a server to communicate the result to reduce, tell
-					// coordinator the map operation is completed
+					// TODO: save file, open a server to communicate the result to reduce
 					for v := range kva {
 						fmt.Println(v)
 					}
@@ -142,10 +140,7 @@ func CallExample() {
 // XXX:
 func CallGetMapTask() (mr.GetMapTaskReply, bool) {
 	// declare an argument structure.
-	args := mr.GetMapTaskArgs{
-		// TODO: placeholder
-		Addr: netip.AddrFrom4([4]byte{127, 0, 0, 1}),
-	}
+	args := mr.GetMapTaskArgs{}
 
 	// declare a reply structure.
 	reply := mr.GetMapTaskReply{}

@@ -1,7 +1,5 @@
 package mr
 
-import "net/netip"
-
 //
 // RPC definitions.
 //
@@ -22,9 +20,7 @@ type ExampleReply struct {
 // GetMapTask RPC Arguments
 //
 
-type GetMapTaskArgs struct {
-	Addr netip.Addr
-}
+type GetMapTaskArgs struct{}
 
 type GetMapTaskReply struct {
 	Path           MapTaskFilePath

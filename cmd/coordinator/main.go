@@ -82,7 +82,7 @@ func (c *Coordinator) GetMapTask(args *mr.GetMapTaskArgs, reply *mr.GetMapTaskRe
 		if v.state == Unassigned {
 			reply.Path = k
 			assigned = true
-			v.Assign(&args.Addr)
+			v.Assign()
 			c.map_tasks[k] = v
 			reply.MapIsCompleted = false
 			break
@@ -112,14 +112,14 @@ type MapTask struct {
 }
 
 // XXX:
-func (mt *MapTask) Assign(addr *netip.Addr) error {
+func (mt *MapTask) Assign() error {
 	if mt.state == Done {
 		return errors.New("The task is completed.")
 	} else if mt.state == Assigned {
 		return errors.New("The task is already assigned.")
 	}
 	mt.state = Assigned
-	mt.addr = addr
+	mt.addr = nil
 	return nil
 }
 
