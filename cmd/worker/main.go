@@ -13,11 +13,13 @@ import (
 	"log"
 	"mapreduce/pkg/mr"
 	"mapreduce/pkg/utils"
+	"math/rand"
 	"net/netip"
 	"net/rpc"
 	"os"
 	"strconv"
 	"sync"
+	"time"
 )
 
 func main() {
@@ -131,7 +133,9 @@ type Bucket struct {
 
 func NewBucket(id int) Bucket {
 	// TODO: Path, maybe use "/var/tmp"
-	path := "./instace/" + strconv.Itoa(os.Getegid()) + "-" + strconv.Itoa(id)
+	rand.New(rand.NewSource(time.Now().UnixNano()))
+	// TODO: use path/filepath
+	path := "./instace/" + strconv.Itoa(os.Getegid()) + "-" + strconv.Itoa(id) + "-" + strconv.Itoa(rand.Intn(1000000))
 	file, err := os.Create(path)
 	writer := csv.NewWriter(file)
 	reader := csv.NewReader(file)
