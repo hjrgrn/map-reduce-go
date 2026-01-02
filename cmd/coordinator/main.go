@@ -13,23 +13,34 @@ package main
 // ```
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"mapreduce/pkg/mr"
 	"net"
 	"net/http"
+	"net/netip"
 	"net/rpc"
 	"os"
+	"strconv"
+	"sync"
 	"time"
 )
 
 func main() {
+	usage := "Usage: coordinator buckets inputfiles...\n"
 	if len(os.Args) < 2 {
-		fmt.Fprintf(os.Stderr, "Usage: coordinator inputfiles...\n")
+		fmt.Fprintf(os.Stderr, usage)
 		os.Exit(1)
 	}
 
-	m := MakeCoordinator(os.Args[1:], 10)
+	buckets, err := strconv.Atoi(os.Args[1])
+	if err != nil {
+		fmt.Fprintf(os.Stderr, usage)
+		os.Exit(1)
+	}
+
+	m := MakeCoordinator(os.Args[2:], buckets)
 	for m.done() == false {
 		time.Sleep(time.Second)
 	}
@@ -38,18 +49,20 @@ func main() {
 }
 
 type Coordinator struct {
-	MapTasks []MapTask
+	mutex     sync.Mutex
+	map_tasks map[mr.MapTaskFilePath]*MapTask
+	buckets   int
 }
 
 // XXX:
-func build_coordinator(files []string) Coordinator {
-	tasks := make([]MapTask, len(files))
+func build_coordinator(files []string, buckets int) Coordinator {
+	tasks := make(map[mr.MapTaskFilePath]*MapTask, len(files))
 	for i := range files {
 		task := NewMapTask(files[i])
-		tasks = append(tasks, task)
+		tasks[task.path] = &task
 	}
 
-	return Coordinator{MapTasks: tasks}
+	return Coordinator{map_tasks: tasks, buckets: buckets}
 }
 
 // main calls Done() periodically to find out
@@ -69,28 +82,80 @@ func (c *Coordinator) Example(args *mr.ExampleArgs, reply *mr.ExampleReply) erro
 }
 
 // XXX:
+func (c *Coordinator) GetMapTask(args *mr.GetMapTaskArgs, reply *mr.GetMapTaskReply) error {
+	// TODO: add a timer
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	assigned := false
+	for k, v := range c.map_tasks {
+		if v.state == Unassigned {
+			reply.Path = k
+			reply.Buckets = c.buckets
+			assigned = true
+			v.Assign()
+			c.map_tasks[k] = v
+			reply.MapIsCompleted = false
+			break
+		}
+	}
+	if !assigned {
+		reply.MapIsCompleted = true
+	}
+
+	return nil
+}
+
+// XXX:
+func (c *Coordinator) MapCompleted(args *mr.MapCompletedArgs, reply *mr.MapCompletedReply) error {
+	c.mutex.Lock()
+	c.map_tasks[args.Path].Done(args.Addr)
+	defer c.mutex.Unlock()
+	return nil
+}
+
+// XXX:
 type MapTask struct {
 	// TODO: we are in the same filesystem at the moment
-	path  MapTaskFilePath
+	path  mr.MapTaskFilePath
 	state TaskState
+	addr  *netip.AddrPort
 }
 
-func (mt *MapTask) NextStage() {
-	if mt.state == Unassigned {
-		mt.state = Assigned
+// XXX:
+func (mt *MapTask) Assign() error {
+	if mt.state == Done {
+		return errors.New("The task is completed.")
 	} else if mt.state == Assigned {
-		mt.state = Done
+		return errors.New("The task is already assigned.")
 	}
-	// TODO: maybe an error
+	mt.state = Assigned
+	mt.addr = nil
+	return nil
 }
 
-func (mt *MapTask) WorkerFailed() {
-	if mt.state == Assigned {
-		mt.state = Unassigned
+// XXX:
+func (mt *MapTask) Unassign() error {
+	if mt.state == Done {
+		return errors.New("The task is completed.")
+	} else if mt.state == Unassigned {
+		return errors.New("The task is already unassigned.")
 	}
-	// TODO: maybe an error
+	mt.state = Unassigned
+	mt.addr = nil
+	return nil
 }
 
+// XXX:
+func (mt *MapTask) Done(addr netip.AddrPort) error {
+	if mt.state == Done {
+		return errors.New("The task is completed.")
+	}
+	mt.state = Done
+	mt.addr = &addr
+	return nil
+}
+
+// XXX:
 type TaskState int
 
 const (
@@ -101,18 +166,17 @@ const (
 
 func NewMapTask(path string) MapTask {
 	return MapTask{
-		path:  MapTaskFilePath(path),
+		path:  mr.MapTaskFilePath(path),
 		state: Unassigned,
+		addr:  nil,
 	}
 }
-
-type MapTaskFilePath string
 
 // Create a Coordinator.
 // main calls this function.
 // nReduce is the number of reduce tasks to use.
-func MakeCoordinator(files []string, nReduce int) *Coordinator {
-	c := Coordinator{}
+func MakeCoordinator(files []string, buckets int) *Coordinator {
+	c := build_coordinator(files, buckets)
 
 	// XXX:
 
