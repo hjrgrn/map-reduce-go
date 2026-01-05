@@ -58,7 +58,7 @@ func MakeCoordinator(files []string, buckets int) *Coordinator {
 	return &c
 }
 
-// Start a thread that listens for RPCs from worker.go
+// Registers Coordinator and starts a routine that listens for RPCs from worker.go.
 func (c *Coordinator) server() {
 	rpc.Register(c)
 	rpc.HandleHTTP()
@@ -66,5 +66,6 @@ func (c *Coordinator) server() {
 	if e != nil {
 		log.Fatal("listen error:", e)
 	}
+	// TODO: add channel for graceful shutdown
 	go http.Serve(l, nil)
 }
