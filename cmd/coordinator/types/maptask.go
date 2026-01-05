@@ -23,11 +23,11 @@ func NewMapTask(path string) MapTask {
 type MapTask struct {
 	// Path of the file that will be parsed by a Map Worker
 	// TODO: we are in the same filesystem at the moment
-	path  mr.MapTaskFilePath
+	path mr.MapTaskFilePath
 	// State of the task. It can be `Assigned`, `Unassigned` or `Done`.
 	state TaskState
 	// IP address and port number of the Map Worker that is processing the file.
-	addr  *netip.AddrPort
+	addr *netip.AddrPort
 }
 
 // Changes the state of the `MapTask` to `Assigned`.
