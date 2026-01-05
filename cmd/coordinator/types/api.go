@@ -32,7 +32,8 @@ func (c *Coordinator) GetMapTask(args *mr.GetMapTaskArgs, reply *mr.GetMapTaskRe
 	return nil
 }
 
-// XXX:
+// A RPC handler that a Map Worker calls to communicate the Coordinator that has
+// completed its assigned task.
 func (c *Coordinator) MapCompleted(args *mr.MapCompletedArgs, reply *mr.MapCompletedReply) error {
 	c.mutex.Lock()
 	c.map_tasks[args.Path].Done(args.Addr)
