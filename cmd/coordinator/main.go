@@ -13,17 +13,10 @@ package main
 // ```
 
 import (
-	"errors"
 	"fmt"
-	"log"
-	"mapreduce/pkg/mr"
-	"net"
-	"net/http"
-	"net/netip"
-	"net/rpc"
+	"mapreduce/cmd/coordinator/types"
 	"os"
 	"strconv"
-	"sync"
 	"time"
 )
 
@@ -40,157 +33,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	m := MakeCoordinator(os.Args[2:], buckets)
-	for m.done() == false {
+	m := types.MakeCoordinator(os.Args[2:], buckets)
+	for m.Done() == false {
 		time.Sleep(time.Second)
 	}
 
 	time.Sleep(time.Second)
-}
-
-type Coordinator struct {
-	mutex     sync.Mutex
-	map_tasks map[mr.MapTaskFilePath]*MapTask
-	buckets   int
-}
-
-// XXX:
-func build_coordinator(files []string, buckets int) Coordinator {
-	tasks := make(map[mr.MapTaskFilePath]*MapTask, len(files))
-	for i := range files {
-		task := NewMapTask(files[i])
-		tasks[task.path] = &task
-	}
-
-	return Coordinator{map_tasks: tasks, buckets: buckets}
-}
-
-// main calls Done() periodically to find out
-// if the entire job has finished.
-func (c *Coordinator) done() bool {
-	ret := false
-
-	// XXX:
-
-	return ret
-}
-
-// an example RPC handler.
-func (c *Coordinator) Example(args *mr.ExampleArgs, reply *mr.ExampleReply) error {
-	reply.Y = args.X + 1
-	return nil
-}
-
-// XXX:
-func (c *Coordinator) GetMapTask(args *mr.GetMapTaskArgs, reply *mr.GetMapTaskReply) error {
-	// TODO: add a timer
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-	assigned := false
-	for k, v := range c.map_tasks {
-		if v.state == Unassigned {
-			reply.Path = k
-			reply.Buckets = c.buckets
-			assigned = true
-			v.Assign()
-			c.map_tasks[k] = v
-			reply.MapIsCompleted = false
-			break
-		}
-	}
-	if !assigned {
-		reply.MapIsCompleted = true
-	}
-
-	return nil
-}
-
-// XXX:
-func (c *Coordinator) MapCompleted(args *mr.MapCompletedArgs, reply *mr.MapCompletedReply) error {
-	c.mutex.Lock()
-	c.map_tasks[args.Path].Done(args.Addr)
-	defer c.mutex.Unlock()
-	return nil
-}
-
-// XXX:
-type MapTask struct {
-	// TODO: we are in the same filesystem at the moment
-	path  mr.MapTaskFilePath
-	state TaskState
-	addr  *netip.AddrPort
-}
-
-// XXX:
-func (mt *MapTask) Assign() error {
-	if mt.state == Done {
-		return errors.New("The task is completed.")
-	} else if mt.state == Assigned {
-		return errors.New("The task is already assigned.")
-	}
-	mt.state = Assigned
-	mt.addr = nil
-	return nil
-}
-
-// XXX:
-func (mt *MapTask) Unassign() error {
-	if mt.state == Done {
-		return errors.New("The task is completed.")
-	} else if mt.state == Unassigned {
-		return errors.New("The task is already unassigned.")
-	}
-	mt.state = Unassigned
-	mt.addr = nil
-	return nil
-}
-
-// XXX:
-func (mt *MapTask) Done(addr netip.AddrPort) error {
-	if mt.state == Done {
-		return errors.New("The task is completed.")
-	}
-	mt.state = Done
-	mt.addr = &addr
-	return nil
-}
-
-// XXX:
-type TaskState int
-
-const (
-	Unassigned TaskState = iota
-	Assigned
-	Done
-)
-
-func NewMapTask(path string) MapTask {
-	return MapTask{
-		path:  mr.MapTaskFilePath(path),
-		state: Unassigned,
-		addr:  nil,
-	}
-}
-
-// Create a Coordinator.
-// main calls this function.
-// nReduce is the number of reduce tasks to use.
-func MakeCoordinator(files []string, buckets int) *Coordinator {
-	c := build_coordinator(files, buckets)
-
-	// XXX:
-
-	c.server()
-	return &c
-}
-
-// Start a thread that listens for RPCs from worker.go
-func (c *Coordinator) server() {
-	rpc.Register(c)
-	rpc.HandleHTTP()
-	l, e := net.Listen("tcp", ":5000")
-	if e != nil {
-		log.Fatal("listen error:", e)
-	}
-	go http.Serve(l, nil)
 }
