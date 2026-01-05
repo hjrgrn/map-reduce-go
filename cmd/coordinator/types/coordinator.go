@@ -37,8 +37,8 @@ func (c *Coordinator) Done() bool {
 }
 
 // Create a Coordinator.
-// main calls this function.
-// nReduce is the number of reduce tasks to use.
+// `main` calls this function.
+// `buckets` is the number of reduce tasks to use.
 func MakeCoordinator(files []string, buckets int) *Coordinator {
 	c := build_coordinator(files, buckets)
 
