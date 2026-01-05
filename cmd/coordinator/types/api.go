@@ -17,21 +17,17 @@ func (c *Coordinator) GetMapTask(args *mr.GetMapTaskArgs, reply *mr.GetMapTaskRe
 	// TODO: add a timer
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-	assigned := false
 	for k, v := range c.map_tasks {
 		if v.state == Unassigned {
 			reply.Path = k
 			reply.Buckets = c.buckets
-			assigned = true
 			v.Assign()
 			c.map_tasks[k] = v
 			reply.MapIsCompleted = false
-			break
+			return nil
 		}
 	}
-	if !assigned {
-		reply.MapIsCompleted = true
-	}
+	reply.MapIsCompleted = true
 
 	return nil
 }
