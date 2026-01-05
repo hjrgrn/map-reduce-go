@@ -1,5 +1,9 @@
 package types
 
+//
+// `Coordinator`'s methods that will be served through RPCs.
+//
+
 import "mapreduce/pkg/mr"
 
 // an example RPC handler.
@@ -8,7 +12,7 @@ func (c *Coordinator) Example(args *mr.ExampleArgs, reply *mr.ExampleReply) erro
 	return nil
 }
 
-// XXX:
+// A RPC handler that assisgns a Map Task to a Map Worker requiring it.
 func (c *Coordinator) GetMapTask(args *mr.GetMapTaskArgs, reply *mr.GetMapTaskReply) error {
 	// TODO: add a timer
 	c.mutex.Lock()
