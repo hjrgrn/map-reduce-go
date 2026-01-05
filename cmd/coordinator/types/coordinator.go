@@ -9,10 +9,19 @@ import (
 	"sync"
 )
 
+// Manages the main coordination logic for map and reduce tasks.
 type Coordinator struct {
-	mutex     sync.Mutex
+	// Protects access to the `map_tasks` field.
+	mutex sync.Mutex
+
+	// Holds the tasks to be assigned to Map Workers,
+	// keyed by input file path. Each Map Worker processes one file.
 	map_tasks map[mr.MapTaskFilePath]*MapTask
-	buckets   int
+
+	// The number of intermediate file buckets produced by Map Workers.
+	// Each Reduce Worker is assigned one bucket and collects the corresponding
+	// intermediate files from all Map Workers.
+	buckets int
 }
 
 // `MakeCoordinator` helper function.
