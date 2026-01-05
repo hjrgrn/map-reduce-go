@@ -15,7 +15,8 @@ type Coordinator struct {
 	buckets   int
 }
 
-// XXX:
+// `MakeCoordinator` helper function.
+// Initializes a Coordinator instance.
 func build_coordinator(files []string, buckets int) Coordinator {
 	tasks := make(map[mr.MapTaskFilePath]*MapTask, len(files))
 	for i := range files {
