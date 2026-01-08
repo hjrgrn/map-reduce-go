@@ -20,7 +20,7 @@ func main() {
 
 	mapf, reducef := types.LoadApp(os.Args[1])
 
-	worker := types.Worker{}
+	worker := types.NewWorker()
 
 	worker.Work(mapf, reducef)
 }

@@ -20,6 +20,13 @@ type Worker struct {
 	mutex sync.Mutex
 	// State of `Worker`.
 	state WorkerState
+	// Intermediate files.
+	buckets map[int]Bucket
+}
+
+// Instantiates a `Worker`.
+func NewWorker() Worker {
+	return Worker{buckets: make(map[int]Bucket)}
 }
 
 // Type that represents the state of Worker.
