@@ -96,21 +96,8 @@ func (w *Worker) runMap(mapf func(string, string) utils.ByKey,
 		file.Close()
 		kva := mapf(filename, string(content))
 
-		// save files
 		w.saveIntermediateFiles(kva, &reply)
-
-		// TODO: Setup RPCs for other clients
-
-		l, e := net.Listen("tcp", ":0")
-		if e != nil {
-			log.Fatal("listen error:", e)
-		}
-		addr := l.Addr().(*net.TCPAddr)
-		addr_port := addr.AddrPort()
-		CallMapCompleted(reply.Path, addr_port)
-
-		// TODO: delete this
-		l.Close()
+		w.launchRPCServer(&reply)
 	}
 }
 
@@ -128,4 +115,20 @@ func (w *Worker) saveIntermediateFiles(kva utils.ByKey, reply *mr.GetMapTaskRepl
 		writer.Write([]string{kv.Key, kv.Value})
 		writer.Flush()
 	}
+}
+
+// Launch an RPC server that will serve intermediate files to Reduce Workers.
+func (w *Worker) launchRPCServer(reply *mr.GetMapTaskReply) {
+	// TODO: Setup RPCs for other clients
+
+	l, e := net.Listen("tcp", ":0")
+	if e != nil {
+		log.Fatal("listen error:", e)
+	}
+	addr := l.Addr().(*net.TCPAddr)
+	addr_port := addr.AddrPort()
+	CallMapCompleted(reply.Path, addr_port)
+
+	// TODO: delete this
+	l.Close()
 }
