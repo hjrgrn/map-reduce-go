@@ -11,25 +11,33 @@ import (
 )
 
 //
-// XXX:
+// worker subpackage.
 //
 
-// XXX:
+// Manages the state of the worker.
 type Worker struct {
+	// Protects access to `state`.
 	mutex sync.Mutex
+	// State of `Worker`.
 	state WorkerState
 }
 
-// XXX:
+// Type that represents the state of Worker.
+// The possible values are `WorkingOnMap` (default), `WorkingOnReduce` or `Done`.
 type WorkerState int
 
 const (
 	WorkingOnMap WorkerState = iota
 	WorkingOnReduce
+	// When `Worker` is in this state, there is no more work to do; the app should
+	// shut down.
 	Done
 )
 
-// XXX:
+// Asks the server for a Map/Reduce Task and executes `mapf` and `reducef` in a
+// separate routine using the value received, according to the state of `Worker`.
+// When there is no more work to do (`Worker.state` is `Done`), the function returns.
+// TODO: mapf and reducef should be fields of Worker
 func (w *Worker) Work(mapf func(string, string) utils.ByKey,
 	reducef func(string, []string) string) {
 	for {
