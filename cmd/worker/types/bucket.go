@@ -1,5 +1,10 @@
 package types
 
+//
+// bucket subpackage.
+// This subpackage provides the struct `Bucket` and relative functionalities.
+//
+
 import (
 	"encoding/csv"
 	"fmt"
@@ -9,14 +14,23 @@ import (
 	"time"
 )
 
+// Handles an intermediate file.
 type Bucket struct {
-	Id     int
-	Path   string
-	File   *os.File
+	// Identifies the intermediate file.
+	Id int
+	// Path to the intermediate file.
+	Path string
+	// File abstraction connected to the file.
+	File *os.File
+	// Writer pointing to the file.
 	Writer *csv.Writer
+	// Reader pointing to the file.
 	Reader *csv.Reader
 }
 
+// Instantiate a new Bucket.
+// TODO: for the time being the intermediate file is saved in the directory
+// `instance`, using a somewhat random filepath.
 func NewBucket(id int) Bucket {
 	// TODO: Path, maybe use "/var/tmp"
 	rand.New(rand.NewSource(time.Now().UnixNano()))
