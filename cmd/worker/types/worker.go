@@ -3,6 +3,7 @@ package types
 import (
 	"io"
 	"log"
+	"mapreduce/pkg/mr"
 	"mapreduce/pkg/utils"
 	"net"
 	"os"
@@ -96,19 +97,7 @@ func (w *Worker) runMap(mapf func(string, string) utils.ByKey,
 		kva := mapf(filename, string(content))
 
 		// save files
-		buckets := make(map[int]Bucket, reply.Buckets)
-		for i := range reply.Buckets {
-			buckets[i] = NewBucket(i)
-		}
-		for _, kv := range kva {
-			// TODO: error handling
-			index, _ := strconv.Atoi(kv.Key)
-			hash := index % reply.Buckets
-			writer := buckets[hash].Writer
-			// TODO: error handling
-			writer.Write([]string{kv.Key, kv.Value})
-			writer.Flush()
-		}
+		w.saveIntermediateFiles(kva, &reply)
 
 		// TODO: Setup RPCs for other clients
 
@@ -122,5 +111,21 @@ func (w *Worker) runMap(mapf func(string, string) utils.ByKey,
 
 		// TODO: delete this
 		l.Close()
+	}
+}
+
+// Save intermediate files into `Worker.buckets`
+func (w *Worker) saveIntermediateFiles(kva utils.ByKey, reply *mr.GetMapTaskReply) {
+	for i := range reply.Buckets {
+		w.buckets[i] = NewBucket(i)
+	}
+	for _, kv := range kva {
+		// TODO: error handling
+		index, _ := strconv.Atoi(kv.Key)
+		hash := index % reply.Buckets
+		writer := w.buckets[hash].Writer
+		// TODO: error handling
+		writer.Write([]string{kv.Key, kv.Value})
+		writer.Flush()
 	}
 }
