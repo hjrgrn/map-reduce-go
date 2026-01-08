@@ -1,0 +1,94 @@
+package types
+
+//
+// API subpackage.
+// This subpackage contains calls that `Workers` performs against the
+// coordinator server.
+//
+
+import (
+	"fmt"
+	"log"
+	"mapreduce/pkg/mr"
+	"net/netip"
+	"net/rpc"
+)
+
+// Example of a call to the coordinator.
+func CallExample() {
+	// declare an argument structure.
+	args := mr.ExampleArgs{}
+
+	// fill in the argument(s).
+	args.X = 99
+
+	// declare a reply structure.
+	reply := mr.ExampleReply{}
+
+	// send the RPC request, wait for the reply.
+	// the "Coordinator.Example" tells the
+	// receiving server that we'd like to call
+	// the Example() method of struct Coordinator.
+	ok := call("Coordinator.Example", &args, &reply)
+	if ok {
+		// reply.Y should be 100.
+		fmt.Printf("reply.Y %v\n", reply.Y)
+	} else {
+		fmt.Printf("call failed!\n")
+	}
+}
+
+// Calls `Coordinator.GetMapTask` on the RPC server offered by the coordinator.
+// If everything goes fine, the server will respond with a Map Task to work on.
+// Returns the reply and a bool, if something went wrong the bool will be false,
+// it will be true otherwise.
+func CallGetMapTask() (mr.GetMapTaskReply, bool) {
+	// declare an argument structure.
+	args := mr.GetMapTaskArgs{}
+
+	// declare a reply structure.
+	reply := mr.GetMapTaskReply{}
+
+	// send the RPC request, wait for the reply.
+	ok := call("Coordinator.GetMapTask", &args, &reply)
+
+	return reply, ok
+}
+
+// Calls `Coordinator.MapCompleted` on the RPC server offered by the coordinator.
+// This call communicates that the Map Task assigned has been completed, and the
+// worker is ready to serve intermediate files, on the address and port provided
+// by `addr`, to Reduce Workers.
+// Returns the reply and a bool, The bool is true if everything went fine, false
+// otherwise.
+func CallMapCompleted(filename mr.MapTaskFilePath, addr netip.AddrPort) (mr.MapCompletedReply, bool) {
+	args := mr.MapCompletedArgs{
+		Path: filename,
+		Addr: addr,
+	}
+	reply := mr.MapCompletedReply{}
+	ok := call("Coordinator.MapCompleted", &args, &reply)
+
+	return reply, ok
+}
+
+// Send an RPC request to the coordinator and wait for the response.
+// If it fails to contact the coordinator, the program will crash.
+// If something else goes wrong, it returns false.
+// If successful, it returns true.
+func call(rpcname string, args any, reply any) bool {
+	c, err := rpc.DialHTTP("tcp", "127.0.0.1"+":5000")
+	if err != nil {
+		// TODO: graceful handling of DialHTTP failure, graceful shutdown
+		log.Fatal("dialing:", err)
+	}
+	defer c.Close()
+
+	err = c.Call(rpcname, args, reply)
+	if err == nil {
+		return true
+	}
+
+	fmt.Println(err)
+	return false
+}
