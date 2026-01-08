@@ -1,5 +1,11 @@
 package types
 
+//
+// API subpackage.
+// This subpackage contains calls that `Workers` performs against the
+// coordinator server.
+//
+
 import (
 	"fmt"
 	"log"
@@ -8,7 +14,7 @@ import (
 	"net/rpc"
 )
 
-// XXX: Call example
+// Example of a call to the coordinator.
 func CallExample() {
 	// declare an argument structure.
 	args := mr.ExampleArgs{}
@@ -32,7 +38,10 @@ func CallExample() {
 	}
 }
 
-// XXX:
+// Calls `Coordinator.GetMapTask` on the RPC server offered by the coordinator.
+// If everything goes fine, the server will respond with a Map Task to work on.
+// Returns the reply and a bool, if something went wrong the bool will be false,
+// it will be true otherwise.
 func CallGetMapTask() (mr.GetMapTaskReply, bool) {
 	// declare an argument structure.
 	args := mr.GetMapTaskArgs{}
@@ -46,7 +55,12 @@ func CallGetMapTask() (mr.GetMapTaskReply, bool) {
 	return reply, ok
 }
 
-// XXX:
+// Calls `Coordinator.MapCompleted` on the RPC server offered by the coordinator.
+// This call communicates that the Map Task assigned has been completed, and the
+// worker is ready to serve intermediate files, on the address and port provided
+// by `addr`, to Reduce Workers.
+// Returns the reply and a bool, The bool is true if everything went fine, false
+// otherwise.
 func CallMapCompleted(filename mr.MapTaskFilePath, addr netip.AddrPort) (mr.MapCompletedReply, bool) {
 	args := mr.MapCompletedArgs{
 		Path: filename,
