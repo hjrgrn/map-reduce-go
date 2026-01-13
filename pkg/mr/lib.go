@@ -52,3 +52,5 @@ type MapCompletedArgs struct {
 type MapCompletedReply struct{}
 
 type MapTaskFilePath string
+
+type IntermediateFilePath string
