@@ -137,13 +137,22 @@ func (w *Worker) launchRPCServer(reply *mr.GetMapTaskReply) {
 	http.Serve(l, nil)
 }
 
+// XXX: comment, domain
+func (w *Worker) getBucketFromId(id int) (string, bool) {
+	bucket, ok := w.buckets[id]
+	return bucket.Path, ok
+}
+
 type Server struct {
 	w *Worker
 }
 
 // TODO: API subpackage
+// XXX:
 func (s *Server) GetBucket(args *GetBucketArgs, reply *GetBucketReply) error {
-
+	// TODO: error handling
+	path, _ := s.w.getBucketFromId(args.Id)
+	reply.Path = IntermediateFilePath(path)
 	return nil
 }
 
