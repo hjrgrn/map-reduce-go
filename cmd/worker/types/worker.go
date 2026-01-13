@@ -6,6 +6,8 @@ import (
 	"mapreduce/pkg/mr"
 	"mapreduce/pkg/utils"
 	"net"
+	"net/http"
+	"net/rpc"
 	"os"
 	"strconv"
 	"sync"
@@ -54,7 +56,8 @@ func (w *Worker) Work(mapf func(string, string) utils.ByKey,
 		w.mutex.Unlock()
 
 		if state == Done {
-			break
+			// TODO: graceful shutdown
+			os.Exit(0)
 		} else if state == WorkingOnMap {
 			go w.runMap(mapf)
 		} else {
@@ -120,7 +123,9 @@ func (w *Worker) saveIntermediateFiles(kva utils.ByKey, reply *mr.GetMapTaskRepl
 // Launch an RPC server that will serve intermediate files to Reduce Workers.
 func (w *Worker) launchRPCServer(reply *mr.GetMapTaskReply) {
 	// TODO: Setup RPCs for other clients
-
+	s := Server{w}
+	rpc.Register(s)
+	rpc.HandleHTTP()
 	l, e := net.Listen("tcp", ":0")
 	if e != nil {
 		log.Fatal("listen error:", e)
@@ -129,6 +134,12 @@ func (w *Worker) launchRPCServer(reply *mr.GetMapTaskReply) {
 	addr_port := addr.AddrPort()
 	CallMapCompleted(reply.Path, addr_port)
 
-	// TODO: delete this
-	l.Close()
+	http.Serve(l, nil)
 }
+
+type Server struct {
+	w *Worker
+}
+
+// TODO: API subpackage
+func (s *Server) GetBucket() error { return nil }
