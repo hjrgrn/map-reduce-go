@@ -8,6 +8,7 @@ package types
 import (
 	"encoding/csv"
 	"fmt"
+	"mapreduce/pkg/mr"
 	"math/rand"
 	"os"
 	"strconv"
@@ -19,7 +20,7 @@ type Bucket struct {
 	// Identifies the intermediate file.
 	Id int
 	// Path to the intermediate file.
-	Path string
+	Path mr.IntermediateFilePath
 	// File abstraction connected to the file.
 	File *os.File
 	// Writer pointing to the file.
@@ -44,5 +45,5 @@ func NewBucket(id int) Bucket {
 		fmt.Printf("Fatal error opening a file: %v", err)
 		os.Exit(2)
 	}
-	return Bucket{Id: id, Path: path, File: file, Writer: writer, Reader: reader}
+	return Bucket{Id: id, Path: mr.IntermediateFilePath(path), File: file, Writer: writer, Reader: reader}
 }

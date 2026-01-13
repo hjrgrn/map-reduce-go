@@ -137,31 +137,9 @@ func (w *Worker) launchRPCServer(reply *mr.GetMapTaskReply) {
 	http.Serve(l, nil)
 }
 
-// XXX: comment, domain
-func (w *Worker) getBucketFromId(id int) (string, bool) {
+// Returns the path of a packet identified by id, and a bool indicating success.
+// The bool is false if no bucket is found with the given id.
+func (w *Worker) getBucketFromId(id int) (mr.IntermediateFilePath, bool) {
 	bucket, ok := w.buckets[id]
 	return bucket.Path, ok
 }
-
-type Server struct {
-	w *Worker
-}
-
-// TODO: API subpackage
-// XXX:
-func (s *Server) GetBucket(args *GetBucketArgs, reply *GetBucketReply) error {
-	// TODO: error handling
-	path, _ := s.w.getBucketFromId(args.Id)
-	reply.Path = IntermediateFilePath(path)
-	return nil
-}
-
-type GetBucketArgs struct {
-	Id int
-}
-
-type GetBucketReply struct {
-	Path IntermediateFilePath
-}
-
-type IntermediateFilePath string
