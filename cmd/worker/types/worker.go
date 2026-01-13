@@ -142,4 +142,17 @@ type Server struct {
 }
 
 // TODO: API subpackage
-func (s *Server) GetBucket() error { return nil }
+func (s *Server) GetBucket(args *GetBucketArgs, reply *GetBucketReply) error {
+
+	return nil
+}
+
+type GetBucketArgs struct {
+	Id int
+}
+
+type GetBucketReply struct {
+	Path IntermediateFilePath
+}
+
+type IntermediateFilePath string
