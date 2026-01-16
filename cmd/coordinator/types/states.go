@@ -3,9 +3,8 @@ package types
 type TaskState int
 
 const (
-	Unassigned TaskState = iota
-	Assigned
-	Done
+	TaskPending TaskState = iota
+	TaskDone
 )
 
 type CoordinatorState int

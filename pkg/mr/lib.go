@@ -25,7 +25,7 @@ type ExampleReply struct {
 type GetTaskArgs struct{}
 
 // TODO: maybe use oneof
-// TODO: enforce exclusive or
+// TODO: enforce exclusive or nothing for done
 type GetTaskReply struct {
 	MapReply *GetMapTaskReply
 	ReduceReply *GetReduceTaskReply
