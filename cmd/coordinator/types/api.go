@@ -12,22 +12,29 @@ func (c *Coordinator) Example(args *mr.ExampleArgs, reply *mr.ExampleReply) erro
 	return nil
 }
 
-// A RPC handler that assisgns a Map Task to a Map Worker requiring it.
-func (c *Coordinator) GetMapTask(args *mr.GetMapTaskArgs, reply *mr.GetMapTaskReply) error {
-	// TODO: add a timer
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-	for k, v := range c.map_tasks {
-		if v.state == Unassigned {
-			reply.Path = k
-			reply.Buckets = c.buckets
-			v.Assign()
-			c.map_tasks[k] = v
-			reply.MapIsCompleted = false
-			return nil
+// XXX: A RPC handler that assisgns a Task to a Worker requiring it.
+func (c *Coordinator) GetTask(args *mr.GetTaskArgs, reply *mr.GetTaskReply) error {
+	if c.state == Map {
+		// TODO: add a timer
+		c.mutex.Lock()
+		for k, v := range c.map_tasks {
+			if v.state == Unassigned {
+				map_reply := mr.GetMapTaskReply{
+					Path:    k,
+					Buckets: c.buckets,
+				}
+				v.Assign()
+				c.map_tasks[k] = v
+				reply.MapReply = &map_reply
+				return nil
+			}
 		}
+		c.mutex.Unlock()
+	} else if c.state == Reduce {
+		// TODO:
+	} else {
+		// XXX:
 	}
-	reply.MapIsCompleted = true
 
 	return nil
 }

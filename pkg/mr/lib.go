@@ -19,20 +19,29 @@ type ExampleReply struct {
 }
 
 //
-// GetMapTask RPC Arguments
+// GetTask RPC Arguments
 //
 
-type GetMapTaskArgs struct{}
+type GetTaskArgs struct{}
 
+// TODO: maybe use oneof
+// TODO: enforce exclusive or
+type GetTaskReply struct {
+	MapReply *GetMapTaskReply
+	ReduceReply *GetReduceTaskReply
+}
+
+// XXX:
 type GetMapTaskReply struct {
 	// Path to the file that has been assigned to the requiring Map Worker.
 	Path MapTaskFilePath
-	// Weather the map procedure has been completed or not. If it is, there will be no
-	// value inside `Path`, and the requiring Map Worker will start operating as a
-	// Reduce Worker.
-	MapIsCompleted bool
 	// The amount of intermediate files that will be produced.
 	Buckets int
+}
+
+// XXX:
+type GetReduceTaskReply struct {
+	// TODO:
 }
 
 //
