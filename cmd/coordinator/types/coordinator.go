@@ -22,6 +22,9 @@ type Coordinator struct {
 	// Each Reduce Worker is assigned one bucket and collects the corresponding
 	// intermediate files from all Map Workers.
 	buckets int
+
+	// XXX:
+	state CoordinatorState
 }
 
 // `MakeCoordinator` helper function.

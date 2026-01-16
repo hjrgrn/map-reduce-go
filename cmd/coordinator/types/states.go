@@ -7,3 +7,11 @@ const (
 	Assigned
 	Done
 )
+
+type CoordinatorState int
+
+const (
+	Map CoordinatorState = iota
+	Reduce
+	Completed
+)
