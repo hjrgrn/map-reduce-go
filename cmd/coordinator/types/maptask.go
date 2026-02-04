@@ -14,7 +14,7 @@ import (
 func NewMapTask(path string) MapTask {
 	return MapTask{
 		path:  mr.MapTaskFilePath(path),
-		state: Unassigned,
+		state: Pending,
 		addr:  nil,
 	}
 }
@@ -33,26 +33,26 @@ type MapTask struct {
 
 // Changes the state of the `MapTask` to `Assigned`.
 // If the task is already assigned, or already done, it returns an error.
-func (mt *MapTask) Assign() error {
-	if mt.state == Done {
-		return errors.New("The task is completed.")
-	} else if mt.state == Assigned {
-		return errors.New("The task is already assigned.")
-	}
-	mt.state = Assigned
-	mt.addr = nil
-	return nil
-}
+// func (mt *MapTask) Assign() error {
+// 	if mt.state == Done {
+// 		return errors.New("The task is completed.")
+// 	} else if mt.state == Assigned {
+// 		return errors.New("The task is already assigned.")
+// 	}
+// 	mt.state = Assigned
+// 	mt.addr = nil
+// 	return nil
+// }
 
 // Changes the state of the `MapTask` to `Unassigned`.
 // If the task is already unassigned, or already done, it returns an error.
 func (mt *MapTask) Unassign() error {
 	if mt.state == Done {
 		return errors.New("The task is completed.")
-	} else if mt.state == Unassigned {
+	} else if mt.state == Pending {
 		return errors.New("The task is already unassigned.")
 	}
-	mt.state = Unassigned
+	mt.state = Pending
 	mt.addr = nil
 	return nil
 }

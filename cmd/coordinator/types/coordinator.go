@@ -2,7 +2,6 @@ package types
 
 import (
 	"log"
-	"mapreduce/pkg/mr"
 	"net"
 	"net/http"
 	"net/rpc"
@@ -16,7 +15,7 @@ type Coordinator struct {
 
 	// Holds the tasks to be assigned to Map Workers,
 	// keyed by input file path. Each Map Worker processes one file.
-	map_tasks map[mr.MapTaskFilePath]*MapTask
+	map_tasks []*MapTask
 
 	// The number of intermediate file buckets produced by Map Workers.
 	// Each Reduce Worker is assigned one bucket and collects the corresponding
@@ -25,15 +24,18 @@ type Coordinator struct {
 
 	// XXX:
 	state CoordinatorState
+
+	///XXX:
+	cursor int
 }
 
 // `MakeCoordinator` helper function.
 // Initializes a Coordinator instance.
 func build_coordinator(files []string, buckets int) Coordinator {
-	tasks := make(map[mr.MapTaskFilePath]*MapTask, len(files))
+	tasks := make([]*MapTask, len(files))
 	for i := range files {
 		task := NewMapTask(files[i])
-		tasks[task.path] = &task
+		tasks[i] = &task
 	}
 
 	return Coordinator{map_tasks: tasks, buckets: buckets}

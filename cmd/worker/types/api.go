@@ -44,7 +44,7 @@ func CallExample() {
 // it will be true otherwise.
 func CallGetMapTask() (mr.GetMapTaskReply, bool) {
 	// declare an argument structure.
-	args := mr.GetMapTaskArgs{}
+	args := mr.GetMapTaskReply{}
 
 	// declare a reply structure.
 	reply := mr.GetMapTaskReply{}
@@ -61,9 +61,9 @@ func CallGetMapTask() (mr.GetMapTaskReply, bool) {
 // by `addr`, to Reduce Workers.
 // Returns the reply and a bool, The bool is true if everything went fine, false
 // otherwise.
-func CallMapCompleted(filename mr.MapTaskFilePath, addr netip.AddrPort) (mr.MapCompletedReply, bool) {
+func CallMapCompleted(index int, addr netip.AddrPort) (mr.MapCompletedReply, bool) {
 	args := mr.MapCompletedArgs{
-		Path: filename,
+		Index: index,
 		Addr: addr,
 	}
 	reply := mr.MapCompletedReply{}

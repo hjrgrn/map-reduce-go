@@ -4,7 +4,9 @@ package types
 // `Coordinator`'s methods that will be served through RPCs.
 //
 
-import "mapreduce/pkg/mr"
+import (
+	"mapreduce/pkg/mr"
+)
 
 // an example RPC handler.
 func (c *Coordinator) Example(args *mr.ExampleArgs, reply *mr.ExampleReply) error {
@@ -15,20 +17,26 @@ func (c *Coordinator) Example(args *mr.ExampleArgs, reply *mr.ExampleReply) erro
 // XXX: A RPC handler that assisgns a Task to a Worker requiring it.
 func (c *Coordinator) GetTask(args *mr.GetTaskArgs, reply *mr.GetTaskReply) error {
 	if c.state == Map {
-		// TODO: add a timer
 		c.mutex.Lock()
-		for k, v := range c.map_tasks {
-			if v.state == Unassigned {
+
+		n_task := len(c.map_tasks)
+		for i := range n_task {
+			c.cursor = (c.cursor + i) % n_task
+			element := c.map_tasks[c.cursor]
+			if element.state == Pending {
 				map_reply := mr.GetMapTaskReply{
-					Path:    k,
-					Buckets: c.buckets,
+					Path:           element.path,
+					Buckets:        c.buckets,
+					Index:          c.cursor,
+					MapIsCompleted: false,
 				}
-				v.Assign()
-				c.map_tasks[k] = v
 				reply.MapReply = &map_reply
 				return nil
 			}
 		}
+		// No pending tasks
+		c.state = Reduce
+
 		c.mutex.Unlock()
 	} else if c.state == Reduce {
 		// TODO:
@@ -43,7 +51,7 @@ func (c *Coordinator) GetTask(args *mr.GetTaskArgs, reply *mr.GetTaskReply) erro
 // completed its assigned task.
 func (c *Coordinator) MapCompleted(args *mr.MapCompletedArgs, reply *mr.MapCompletedReply) error {
 	c.mutex.Lock()
-	c.map_tasks[args.Path].Done(args.Addr)
+	c.map_tasks[args.Index].Done(args.Addr)
 	defer c.mutex.Unlock()
 	return nil
 }

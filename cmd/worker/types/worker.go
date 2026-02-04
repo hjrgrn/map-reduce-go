@@ -132,7 +132,7 @@ func (w *Worker) launchRPCServer(reply *mr.GetMapTaskReply) {
 	}
 	addr := l.Addr().(*net.TCPAddr)
 	addr_port := addr.AddrPort()
-	CallMapCompleted(reply.Path, addr_port)
+	CallMapCompleted(reply.Index, addr_port)
 
 	http.Serve(l, nil)
 }

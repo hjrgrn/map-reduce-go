@@ -27,7 +27,7 @@ type GetTaskArgs struct{}
 // TODO: maybe use oneof
 // TODO: enforce exclusive or
 type GetTaskReply struct {
-	MapReply *GetMapTaskReply
+	MapReply    *GetMapTaskReply
 	ReduceReply *GetReduceTaskReply
 }
 
@@ -37,6 +37,10 @@ type GetMapTaskReply struct {
 	Path MapTaskFilePath
 	// The amount of intermediate files that will be produced.
 	Buckets int
+	// XXX:
+	Index int
+	// XXX:
+	MapIsCompleted bool
 }
 
 // XXX:
@@ -49,11 +53,8 @@ type GetReduceTaskReply struct {
 //
 
 type MapCompletedArgs struct {
-	// The Path of the file that has been parsed.
-	// At this point the path of the file won't be used anymore, since the
-	// intermediate files that the Reduce Workers will use are on the filesystems
-	// of the Map Workers, but the path identifies the Map Task for Coordinator.
-	Path MapTaskFilePath
+	// XXX:
+	Index int
 	// Address and port number of the Map Worker that has completed the task.
 	Addr netip.AddrPort
 }

@@ -3,8 +3,7 @@ package types
 type TaskState int
 
 const (
-	Unassigned TaskState = iota
-	Assigned
+	Pending TaskState = iota
 	Done
 )
 
