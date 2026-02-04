@@ -45,7 +45,10 @@ type GetMapTaskReply struct {
 
 // XXX:
 type GetReduceTaskReply struct {
-	// TODO:
+	// XXX:
+	Addresses []*netip.AddrPort
+	// XXX:
+	Bucket int
 }
 
 //

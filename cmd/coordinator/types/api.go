@@ -6,6 +6,8 @@ package types
 
 import (
 	"mapreduce/pkg/mr"
+	"math/rand"
+	"net/netip"
 )
 
 // an example RPC handler.
@@ -39,7 +41,20 @@ func (c *Coordinator) GetTask(args *mr.GetTaskArgs, reply *mr.GetTaskReply) erro
 
 		c.mutex.Unlock()
 	} else if c.state == Reduce {
-		// TODO:
+		// TODO: map_tasks should be unmutable at this point, the lock may be redundant
+		c.mutex.Lock()
+		addresses := make([]*netip.AddrPort, len(c.map_tasks))
+		for i, element := range c.map_tasks {
+			addresses[i] = element.addr
+		}
+		bucket := rand.Intn(c.buckets)
+		reduce_reply := mr.GetReduceTaskReply{
+			Addresses: addresses,
+			Bucket:    bucket,
+		}
+		reply.ReduceReply = &reduce_reply
+
+		c.mutex.Unlock()
 	} else {
 		// XXX:
 	}
