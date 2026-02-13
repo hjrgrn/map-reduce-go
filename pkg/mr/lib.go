@@ -55,7 +55,22 @@ type MapCompletedArgs struct {
 	Addr netip.AddrPort
 }
 
-type MapCompletedReply struct{}
+type MapCompletedReply struct{
+	Failure bool
+}
+
+//
+// ReduceCompleted RPC Arguments
+//
+
+type ReduceCompletedArgs struct {
+	// XXX:
+	Bucket int
+}
+
+type ReduceCompletedReply struct{
+	Failure bool
+}
 
 type MapTaskFilePath string
 

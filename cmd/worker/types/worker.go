@@ -105,9 +105,8 @@ func (w *Worker) runMap(mapf func(string, string) utils.ByKey,
 }
 
 func (w *Worker) runReduce(reducef func(string, []string) string) {
-
 	reply, ok := CallGetReduceTask()
-	// FROMHERE:
+
 }
 
 // Save intermediate files into `Worker.buckets`

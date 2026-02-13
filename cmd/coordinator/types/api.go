@@ -6,7 +6,6 @@ package types
 
 import (
 	"mapreduce/pkg/mr"
-	"math/rand"
 	"net/netip"
 )
 
@@ -43,6 +42,7 @@ func (c *Coordinator) GetMapTask(args *mr.GetMapTaskArgs, reply *mr.GetMapTaskRe
 	return nil
 }
 
+// XXX:
 func (c *Coordinator) GetReduceTask(args *mr.GetReduceTaskArgs, reply *mr.GetReduceTaskReply) error {
 	if c.state != Reduce {
 		// TODO:
@@ -75,7 +75,30 @@ func (c *Coordinator) GetReduceTask(args *mr.GetReduceTaskArgs, reply *mr.GetRed
 // completed its assigned task.
 func (c *Coordinator) MapCompleted(args *mr.MapCompletedArgs, reply *mr.MapCompletedReply) error {
 	c.mutex.Lock()
-	c.map_tasks[args.Index].Done(args.Addr)
 	defer c.mutex.Unlock()
+	index := args.Index
+	if 0 < index || index >= len(c.map_tasks) {
+		// TODO: hanlde error worker side
+		reply.Failure = true
+		// TODO: maybe return an error
+		return nil
+	}
+	c.map_tasks[args.Index].Done(args.Addr)
+	return nil
+}
+
+// XXX:
+func (c *Coordinator) ReduceCompleted(args *mr.ReduceCompletedArgs, reply *mr.ReduceCompletedReply) error {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	index := args.Bucket
+	if 0 < index || index >= len(c.buckets) {
+		// TODO: hanlde error worker side
+		reply.Failure = true
+		// TODO: maybe return an error
+		return nil
+	}
+	c.buckets[args.Bucket].Done()
+
 	return nil
 }

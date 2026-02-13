@@ -9,3 +9,7 @@ type Bucket struct {
 func NewBucket(index int) Bucket {
 	return Bucket{index: index}
 }
+
+func (b *Bucket) Done() {
+	b.state = Done
+}
