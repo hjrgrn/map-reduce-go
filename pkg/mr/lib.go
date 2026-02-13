@@ -18,18 +18,7 @@ type ExampleReply struct {
 	Y int
 }
 
-//
-// GetTask RPC Arguments
-//
-
-type GetTaskArgs struct{}
-
-// TODO: maybe use oneof
-// TODO: enforce exclusive or
-type GetTaskReply struct {
-	MapReply    *GetMapTaskReply
-	ReduceReply *GetReduceTaskReply
-}
+type GetMapTaskArgs struct{}
 
 // XXX:
 type GetMapTaskReply struct {
@@ -43,12 +32,16 @@ type GetMapTaskReply struct {
 	MapIsCompleted bool
 }
 
+type GetReduceTaskArgs struct{}
+
 // XXX:
 type GetReduceTaskReply struct {
 	// XXX:
 	Addresses []*netip.AddrPort
 	// XXX:
 	Bucket int
+	// XXX
+	ReduceIsCompleted bool
 }
 
 //

@@ -55,6 +55,20 @@ func CallGetMapTask() (mr.GetMapTaskReply, bool) {
 	return reply, ok
 }
 
+// TODO: code duplication CallGetMapTask
+func CallGetReduceTask() (mr.GetReduceTaskReply, bool) {
+	// declare an argument structure.
+	args := mr.GetReduceTaskArgs{}
+
+	// declare a reply structure.
+	reply := mr.GetReduceTaskReply{}
+
+	// send the RPC request, wait for the reply.
+	ok := call("Coordinator.GetReduceTask", &args, &reply)
+
+	return reply, ok
+}
+
 // Calls `Coordinator.MapCompleted` on the RPC server offered by the coordinator.
 // This call communicates that the Map Task assigned has been completed, and the
 // worker is ready to serve intermediate files, on the address and port provided
@@ -64,7 +78,7 @@ func CallGetMapTask() (mr.GetMapTaskReply, bool) {
 func CallMapCompleted(index int, addr netip.AddrPort) (mr.MapCompletedReply, bool) {
 	args := mr.MapCompletedArgs{
 		Index: index,
-		Addr: addr,
+		Addr:  addr,
 	}
 	reply := mr.MapCompletedReply{}
 	ok := call("Coordinator.MapCompleted", &args, &reply)

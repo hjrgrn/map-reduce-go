@@ -31,32 +31,6 @@ type MapTask struct {
 	addr *netip.AddrPort
 }
 
-// Changes the state of the `MapTask` to `Assigned`.
-// If the task is already assigned, or already done, it returns an error.
-// func (mt *MapTask) Assign() error {
-// 	if mt.state == Done {
-// 		return errors.New("The task is completed.")
-// 	} else if mt.state == Assigned {
-// 		return errors.New("The task is already assigned.")
-// 	}
-// 	mt.state = Assigned
-// 	mt.addr = nil
-// 	return nil
-// }
-
-// Changes the state of the `MapTask` to `Unassigned`.
-// If the task is already unassigned, or already done, it returns an error.
-func (mt *MapTask) Unassign() error {
-	if mt.state == Done {
-		return errors.New("The task is completed.")
-	} else if mt.state == Pending {
-		return errors.New("The task is already unassigned.")
-	}
-	mt.state = Pending
-	mt.addr = nil
-	return nil
-}
-
 // Changes `state` of the `MapTask` to `Done` and `addr` to the address of the
 // Map Worker that contains the intermediate files for this specific task.
 // When all the `MapTask`s are in `Done` state Reduce Workers will start

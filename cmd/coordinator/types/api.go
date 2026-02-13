@@ -17,47 +17,56 @@ func (c *Coordinator) Example(args *mr.ExampleArgs, reply *mr.ExampleReply) erro
 }
 
 // XXX: A RPC handler that assisgns a Task to a Worker requiring it.
-func (c *Coordinator) GetTask(args *mr.GetTaskArgs, reply *mr.GetTaskReply) error {
-	if c.state == Map {
-		c.mutex.Lock()
-
-		n_task := len(c.map_tasks)
-		for i := range n_task {
-			c.cursor = (c.cursor + i) % n_task
-			element := c.map_tasks[c.cursor]
-			if element.state == Pending {
-				map_reply := mr.GetMapTaskReply{
-					Path:           element.path,
-					Buckets:        c.buckets,
-					Index:          c.cursor,
-					MapIsCompleted: false,
-				}
-				reply.MapReply = &map_reply
-				return nil
-			}
-		}
-		// No pending tasks
-		c.state = Reduce
-
-		c.mutex.Unlock()
-	} else if c.state == Reduce {
-		// TODO: map_tasks should be unmutable at this point, the lock may be redundant
-		c.mutex.Lock()
-		addresses := make([]*netip.AddrPort, len(c.map_tasks))
-		for i, element := range c.map_tasks {
-			addresses[i] = element.addr
-		}
-		bucket := rand.Intn(c.buckets)
-		reduce_reply := mr.GetReduceTaskReply{
-			Addresses: addresses,
-			Bucket:    bucket,
-		}
-		reply.ReduceReply = &reduce_reply
-
-		c.mutex.Unlock()
-	} else {
-		// XXX:
+func (c *Coordinator) GetMapTask(args *mr.GetMapTaskArgs, reply *mr.GetMapTaskReply) error {
+	if c.state != Map {
+		reply.MapIsCompleted = true
+		return nil
 	}
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	n_task := len(c.map_tasks)
+	for i := range n_task {
+		c.map_cursor = (c.map_cursor + i) % n_task
+		element := c.map_tasks[c.map_cursor]
+		if element.state == Pending {
+			reply.Path = element.path
+			reply.Buckets = len(c.buckets)
+			reply.Index = c.map_cursor
+			reply.MapIsCompleted = false
+			return nil
+		}
+	}
+	// No pending tasks
+	c.state = Reduce
+	reply.MapIsCompleted = true
+	return nil
+}
+
+func (c *Coordinator) GetReduceTask(args *mr.GetReduceTaskArgs, reply *mr.GetReduceTaskReply) error {
+	if c.state != Reduce {
+		// TODO:
+		return nil
+	}
+
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	n_buckets := len(c.buckets)
+	for i := range n_buckets {
+		c.reduce_cursor = (c.reduce_cursor + i) % n_buckets
+		if c.buckets[i].state == Pending {
+			addresses := make([]*netip.AddrPort, len(c.map_tasks))
+			for i, element := range c.map_tasks {
+				addresses[i] = element.addr
+			}
+			reply.Addresses = addresses
+			reply.Bucket = i
+			reply.ReduceIsCompleted = false
+			return nil
+		}
+	}
+	reply.ReduceIsCompleted = false
 
 	return nil
 }
