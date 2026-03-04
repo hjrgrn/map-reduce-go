@@ -60,6 +60,8 @@ func (w *Worker) Work(mapf func(string, string) utils.ByKey,
 			os.Exit(0)
 		} else if state == WorkingOnMap {
 			go w.runMap(mapf)
+		} else if state == WorkingOnReduce {
+			go w.runReduce(reducef)
 		} else {
 			// TODO:
 			w.mutex.Lock()
@@ -100,13 +102,58 @@ func (w *Worker) runMap(mapf func(string, string) utils.ByKey,
 		kva := mapf(filename, string(content))
 
 		w.saveIntermediateFiles(kva, &reply)
-		w.launchRPCServer(&reply)
+		go w.launchRPCServer(&reply)
 	}
 }
 
 func (w *Worker) runReduce(reducef func(string, []string) string) {
 	reply, ok := CallGetReduceTask()
+	for !ok {
+		// TODO: wait a certain amount of time before retrying, retry only a certain
+		// amount of time
+		reply, ok = CallGetReduceTask()
+	}
 
+	if reply.ReduceIsCompleted {
+		w.mutex.Lock()
+		w.state = Done
+		w.mutex.Unlock()
+	} else {
+		buckets := make([]string, 0, len(reply.Addresses))
+		bucket_id := reply.Bucket
+		for _, addr := range reply.Addresses {
+			// TODO: duplication in call()
+			c, err := rpc.DialHTTP("tcp", addr.String())
+			if err != nil {
+				// TODO: graceful handling of DialHTTP failure, graceful shutdown
+				log.Fatal("dialing:", err)
+			}
+			defer c.Close()
+			args := GetBucketArgs{
+				Id: bucket_id,
+			}
+			reply := GetBucketReply{}
+			err = c.Call("IntermediateServer.GetBucket", args, reply)
+			if reply.Success {
+				// TODO:
+			}
+			if err != nil {
+				// TODO: maybe retry
+				log.Fatal("TODO:", err)
+			}
+			file, err := os.Open(string(reply.Path))
+			if err != nil {
+				// TODO: maybe retry
+				log.Fatal("TODO:", err)
+			}
+			content, err := io.ReadAll(file)
+			if err != nil {
+				// TODO:
+			}
+			buckets = append(buckets, string(content))
+		}
+		reducef(string(bucket_id), buckets)
+	}
 }
 
 // Save intermediate files into `Worker.buckets`
@@ -128,7 +175,7 @@ func (w *Worker) saveIntermediateFiles(kva utils.ByKey, reply *mr.GetMapTaskRepl
 // Launch an RPC server that will serve intermediate files to Reduce Workers.
 func (w *Worker) launchRPCServer(reply *mr.GetMapTaskReply) {
 	// TODO: Setup RPCs for other clients
-	s := Server{w}
+	s := IntermediateServer{w}
 	rpc.Register(s)
 	rpc.HandleHTTP()
 	l, e := net.Listen("tcp", ":0")
