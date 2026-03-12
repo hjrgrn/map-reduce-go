@@ -2,6 +2,7 @@ package types
 
 import (
 	"log"
+	"mapreduce/pkg/utils"
 	"net"
 	"net/http"
 	"net/rpc"
@@ -23,7 +24,7 @@ type Coordinator struct {
 	buckets []*Bucket
 
 	// XXX:
-	state CoordinatorState
+	state utils.CoordinatorState
 
 	///XXX:
 	map_cursor int
