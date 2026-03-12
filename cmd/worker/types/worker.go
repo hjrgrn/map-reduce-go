@@ -152,6 +152,7 @@ func (w *Worker) runReduce(reducef func(string, []string) string) {
 			}
 			buckets = append(buckets, string(content))
 		}
+		// TODO: fix this
 		reducef(string(bucket_id), buckets)
 	}
 }
