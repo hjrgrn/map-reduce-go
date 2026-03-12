@@ -18,21 +18,30 @@ type ExampleReply struct {
 	Y int
 }
 
-//
-// GetMapTask RPC Arguments
-//
-
 type GetMapTaskArgs struct{}
 
+// XXX:
 type GetMapTaskReply struct {
 	// Path to the file that has been assigned to the requiring Map Worker.
 	Path MapTaskFilePath
-	// Weather the map procedure has been completed or not. If it is, there will be no
-	// value inside `Path`, and the requiring Map Worker will start operating as a
-	// Reduce Worker.
-	MapIsCompleted bool
 	// The amount of intermediate files that will be produced.
 	Buckets int
+	// XXX:
+	Index int
+	// XXX:
+	MapIsCompleted bool
+}
+
+type GetReduceTaskArgs struct{}
+
+// XXX:
+type GetReduceTaskReply struct {
+	// XXX:
+	Addresses []*netip.AddrPort
+	// XXX:
+	Bucket int
+	// XXX
+	ReduceIsCompleted bool
 }
 
 //
@@ -40,16 +49,28 @@ type GetMapTaskReply struct {
 //
 
 type MapCompletedArgs struct {
-	// The Path of the file that has been parsed.
-	// At this point the path of the file won't be used anymore, since the
-	// intermediate files that the Reduce Workers will use are on the filesystems
-	// of the Map Workers, but the path identifies the Map Task for Coordinator.
-	Path MapTaskFilePath
+	// XXX:
+	Index int
 	// Address and port number of the Map Worker that has completed the task.
 	Addr netip.AddrPort
 }
 
-type MapCompletedReply struct{}
+type MapCompletedReply struct{
+	Failure bool
+}
+
+//
+// ReduceCompleted RPC Arguments
+//
+
+type ReduceCompletedArgs struct {
+	// XXX:
+	Bucket int
+}
+
+type ReduceCompletedReply struct{
+	Failure bool
+}
 
 type MapTaskFilePath string
 

@@ -7,17 +7,17 @@ import "mapreduce/pkg/mr"
 // from map workers to reduce workers.
 //
 
-type Server struct {
+type IntermediateServer struct {
 	w *Worker
 }
 
 // An RPC handler that sends an intermediate file to a requesting reduce worker.
 // Reply.success will be false if there are no intermediate files with the given
 // id provided through GetBucketArgs.id, this should not happen.
-func (s *Server) GetBucket(args *GetBucketArgs, reply *GetBucketReply) error {
+func (s *IntermediateServer) GetBucket(args *GetBucketArgs, reply *GetBucketReply) error {
 	path, success := s.w.getBucketFromId(args.Id)
 	reply.Path = path
-	reply.success = success
+	reply.Success = success
 	return nil
 }
 
@@ -35,5 +35,5 @@ type GetBucketReply struct {
 	Path    mr.IntermediateFilePath
 	// Communicates if there is an intermediate file identified by GetBucketArgs.Id.
 	// This should always be true.
-	success bool
+	Success bool
 }
