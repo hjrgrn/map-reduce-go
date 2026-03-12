@@ -17,7 +17,7 @@ type Coordinator struct {
 	// keyed by input file path. Each Map Worker processes one file.
 	map_tasks []*MapTask
 
-	// XXX: The number of intermediate file buckets produced by Map Workers.
+	// The number of intermediate file buckets produced by each Map Workers.
 	// Each Reduce Worker is assigned one bucket and collects the corresponding
 	// intermediate files from all Map Workers.
 	buckets []*Bucket
