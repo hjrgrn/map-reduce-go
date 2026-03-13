@@ -17,7 +17,7 @@ import (
 type CheckHealthArgs struct{}
 
 type CheckHealthReply struct {
-	State  utils.CoordinatorState
+	State  utils.State
 	Uptime time.Duration
 }
 

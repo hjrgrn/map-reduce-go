@@ -25,7 +25,7 @@ type Coordinator struct {
 	buckets []*Bucket
 
 	// XXX:
-	state utils.CoordinatorState
+	state utils.State
 
 	///XXX:
 	map_cursor int

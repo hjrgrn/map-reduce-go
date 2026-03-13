@@ -22,7 +22,7 @@ type Worker struct {
 	// Protects access to `state`.
 	mutex sync.Mutex
 	// State of `Worker`.
-	state WorkerState
+	state utils.State
 	// Intermediate files.
 	buckets map[int]Bucket
 }
@@ -31,18 +31,6 @@ type Worker struct {
 func NewWorker() Worker {
 	return Worker{buckets: make(map[int]Bucket)}
 }
-
-// Type that represents the state of Worker.
-// The possible values are `WorkingOnMap` (default), `WorkingOnReduce` or `Done`.
-type WorkerState int
-
-const (
-	WorkingOnMap WorkerState = iota
-	WorkingOnReduce
-	// When `Worker` is in this state, there is no more work to do; the app should
-	// shut down.
-	Done
-)
 
 // Asks the server for a Map/Reduce Task and executes `mapf` and `reducef` in a
 // separate routine using the value received, according to the state of `Worker`.
@@ -55,17 +43,17 @@ func (w *Worker) Work(mapf func(string, string) utils.ByKey,
 		state := w.state
 		w.mutex.Unlock()
 
-		if state == Done {
+		if state == utils.Completed {
 			// TODO: graceful shutdown
 			os.Exit(0)
-		} else if state == WorkingOnMap {
+		} else if state == utils.Map {
 			go w.runMap(mapf)
-		} else if state == WorkingOnReduce {
+		} else if state == utils.Reduce {
 			go w.runReduce(reducef)
 		} else {
 			// TODO:
 			w.mutex.Lock()
-			w.state = Done
+			w.state = utils.Completed
 			w.mutex.Unlock()
 		}
 		// TODO: close buckets files
@@ -85,7 +73,7 @@ func (w *Worker) runMap(mapf func(string, string) utils.ByKey,
 
 	if reply.MapIsCompleted {
 		w.mutex.Lock()
-		w.state = WorkingOnReduce
+		w.state = utils.Reduce
 		w.mutex.Unlock()
 	} else {
 		// TODO: we are working on the same filesystem at the moment
@@ -116,7 +104,7 @@ func (w *Worker) runReduce(reducef func(string, []string) string) {
 
 	if reply.ReduceIsCompleted {
 		w.mutex.Lock()
-		w.state = Done
+		w.state = utils.Completed
 		w.mutex.Unlock()
 	} else {
 		buckets := make([]string, 0, len(reply.Addresses))
