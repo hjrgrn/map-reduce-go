@@ -10,31 +10,40 @@ import (
 	"fmt"
 	"log"
 	"mapreduce/pkg/mr"
+	"mapreduce/pkg/utils"
 	"net/netip"
 	"net/rpc"
+	"time"
 )
 
-// Example of a call to the coordinator.
-func CallExample() {
+// Checks if the server is online.
+// Example RPC client call.
+func CallCheckHealth() {
 	// declare an argument structure.
-	args := mr.ExampleArgs{}
-
-	// fill in the argument(s).
-	args.X = 99
+	args := mr.CheckHealthArgs{}
 
 	// declare a reply structure.
-	reply := mr.ExampleReply{}
+	reply := mr.CheckHealthReply{}
 
 	// send the RPC request, wait for the reply.
-	// the "Coordinator.Example" tells the
+	// The "Coordinator.CheckHealth" tells the
 	// receiving server that we'd like to call
-	// the Example() method of struct Coordinator.
-	ok := call("Coordinator.Example", &args, &reply)
+	// the CheckHealth() method of struct Coordinator.
+	ok := call("Coordinator.CheckHealth", &args, &reply)
+
 	if ok {
-		// reply.Y should be 100.
-		fmt.Printf("reply.Y %v\n", reply.Y)
+		var state string
+		if reply.State == utils.Map {
+			state = "Map"
+		} else if reply.State == utils.Reduce {
+			state = "Reduce"
+		} else {
+			state = "Done"
+		}
+
+		fmt.Println("Coordinator is online.\nUptime: ", reply.Uptime.Truncate(time.Second), "\nState: ", state)
 	} else {
-		fmt.Printf("call failed!\n")
+		fmt.Println("Coordinator is unreachable.")
 	}
 }
 

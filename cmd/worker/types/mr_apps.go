@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"mapreduce/pkg/utils"
+	"os"
 )
 
 // Load the application Map and Reduce functions
@@ -14,6 +15,10 @@ func LoadApp(appname string) (func(string, string) utils.ByKey, func(string, []s
 		fmt.Println("Executing wordcount..")
 		mapf = Map
 		reducef = Reduce
+	} else if appname == "checkhealth" || appname == "ch" {
+		fmt.Println("Executing checkhealth..")
+		CallCheckHealth()
+		os.Exit(0)
 	} else {
 		log.Fatalf("Unsupported application.")
 	}

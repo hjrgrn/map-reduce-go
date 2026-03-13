@@ -6,18 +6,26 @@ package types
 
 import (
 	"mapreduce/pkg/mr"
+	"mapreduce/pkg/utils"
 	"net/netip"
+	"time"
 )
 
 // an example RPC handler.
-func (c *Coordinator) Example(args *mr.ExampleArgs, reply *mr.ExampleReply) error {
-	reply.Y = args.X + 1
+func (c *Coordinator) CheckHealth(args *mr.CheckHealthArgs, reply *mr.CheckHealthReply) error {
+	c.mutex.Lock()
+	reply.State = c.state
+	c.mutex.Unlock()
+
+	uptime := time.Since(c.start_time)
+
+	reply.Uptime = uptime
 	return nil
 }
 
 // XXX: A RPC handler that assisgns a Task to a Worker requiring it.
 func (c *Coordinator) GetMapTask(args *mr.GetMapTaskArgs, reply *mr.GetMapTaskReply) error {
-	if c.state != Map {
+	if c.state != utils.Map {
 		reply.MapIsCompleted = true
 		return nil
 	}
@@ -37,14 +45,14 @@ func (c *Coordinator) GetMapTask(args *mr.GetMapTaskArgs, reply *mr.GetMapTaskRe
 		}
 	}
 	// No pending tasks
-	c.state = Reduce
+	c.state = utils.Reduce
 	reply.MapIsCompleted = true
 	return nil
 }
 
 // XXX:
 func (c *Coordinator) GetReduceTask(args *mr.GetReduceTaskArgs, reply *mr.GetReduceTaskReply) error {
-	if c.state != Reduce {
+	if c.state != utils.Reduce {
 		// TODO:
 		return nil
 	}

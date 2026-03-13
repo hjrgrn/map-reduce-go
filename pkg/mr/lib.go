@@ -1,21 +1,24 @@
 package mr
 
-import "net/netip"
+import (
+	"mapreduce/pkg/utils"
+	"net/netip"
+	"time"
+)
 
 //
 // RPC definitions.
 //
 
 //
-// Example RPC arguments
+// CheckHealth RPC arguments
 //
 
-type ExampleArgs struct {
-	X int
-}
+type CheckHealthArgs struct{}
 
-type ExampleReply struct {
-	Y int
+type CheckHealthReply struct {
+	State  utils.CoordinatorState
+	Uptime time.Duration
 }
 
 type GetMapTaskArgs struct{}
@@ -55,7 +58,7 @@ type MapCompletedArgs struct {
 	Addr netip.AddrPort
 }
 
-type MapCompletedReply struct{
+type MapCompletedReply struct {
 	Failure bool
 }
 
@@ -68,7 +71,7 @@ type ReduceCompletedArgs struct {
 	Bucket int
 }
 
-type ReduceCompletedReply struct{
+type ReduceCompletedReply struct {
 	Failure bool
 }
 

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/rpc"
 	"sync"
+	"time"
 )
 
 // Manages the main coordination logic for map and reduce tasks.
@@ -31,6 +32,9 @@ type Coordinator struct {
 
 	//XXX:
 	reduce_cursor int
+
+	// Start time.
+	start_time time.Time
 }
 
 // `MakeCoordinator` helper function.
@@ -43,7 +47,7 @@ func build_coordinator(files []string, nBuckets int) Coordinator {
 		tasks[i] = &task
 	}
 
-	return Coordinator{map_tasks: tasks, buckets: buckets}
+	return Coordinator{map_tasks: tasks, buckets: buckets, start_time: time.Now()}
 }
 
 // main calls Done() periodically to find out
