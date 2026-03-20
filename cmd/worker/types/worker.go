@@ -156,6 +156,7 @@ func (w *Worker) runReduce(reducef func(string, []string) string) {
 }
 
 // Save intermediate files into `Worker.buckets`
+// Results are shuffled and sorted into the buckets thanks to a very simple hash function.
 func (w *Worker) saveIntermediateFiles(kva utils.ByKey, reply *mr.GetMapTaskReply) {
 	for i := range reply.Buckets {
 		w.buckets[i] = NewBucket(i)
