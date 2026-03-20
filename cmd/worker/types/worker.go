@@ -1,6 +1,7 @@
 package types
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"mapreduce/pkg/mr"
@@ -45,6 +46,7 @@ func (w *Worker) Work(mapf func(string, string) utils.ByKey,
 
 		if state == utils.Completed {
 			// TODO: graceful shutdown
+			fmt.Println("The work is completed.")
 			os.Exit(0)
 		} else if state == utils.Map {
 			go w.runMap(mapf)
@@ -62,13 +64,21 @@ func (w *Worker) Work(mapf func(string, string) utils.ByKey,
 }
 
 // Runs the map task. It's supposed to be run in a separate routine.
+// If the map task is completed the internal state of Worker will be changed to Reduce.
+// This function tries to contact the coordinator 3 times, if after these tries the coordinator
+// hasn't responded yet this function will crash the process.
 func (w *Worker) runMap(mapf func(string, string) utils.ByKey,
 ) {
 	reply, ok := CallGetMapTask()
-	for !ok {
-		// TODO: wait a certain amount of time before retrying, retry only a certain
-		// amount of time
+	for range 3 {
+		if ok {
+			break
+		}
+		// TODO: wait a certain amount of time before retrying
 		reply, ok = CallGetMapTask()
+	}
+	if !ok {
+		log.Fatalln("The coordinator seems to be offline.")
 	}
 
 	if reply.MapIsCompleted {
@@ -82,11 +92,11 @@ func (w *Worker) runMap(mapf func(string, string) utils.ByKey,
 		if err != nil {
 			log.Fatalf("cannot open %v", filename)
 		}
+		defer file.Close()
 		content, err := io.ReadAll(file)
 		if err != nil {
-			log.Fatalf("cannot read %v", filename)
+			log.Panicf("cannot read %v", filename)
 		}
-		file.Close()
 		kva := mapf(filename, string(content))
 
 		w.saveIntermediateFiles(kva, &reply)
