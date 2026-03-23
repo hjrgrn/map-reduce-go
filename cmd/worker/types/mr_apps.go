@@ -44,7 +44,7 @@ func WcMap(filename string, contents string) utils.ByKey {
 
 	kva := []utils.KeyValue{}
 	for _, w := range words {
-		kv := utils.KeyValue{Key: w, Value: "1"}
+		kv := utils.KeyValue{Key: strings.ToLower(w), Value: "1"}
 		kva = append(kva, kv)
 	}
 	return kva
