@@ -1,6 +1,7 @@
 package types
 
 import (
+	"fmt"
 	"log"
 	"mapreduce/pkg/utils"
 	"net"
@@ -69,6 +70,7 @@ func MakeCoordinator(files []string, buckets int) *Coordinator {
 	// XXX:
 
 	c.server()
+	fmt.Println("Coordinator is online")
 	return &c
 }
 
