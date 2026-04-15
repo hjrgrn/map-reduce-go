@@ -108,6 +108,7 @@ func call(rpcname string, args any, reply any) bool {
 	defer c.Close()
 
 	err = c.Call(rpcname, args, reply)
+	// TODO: Why aren't we returning the error?
 	if err == nil {
 		return true
 	}

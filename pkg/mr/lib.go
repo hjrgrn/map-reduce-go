@@ -32,7 +32,7 @@ type GetMapTaskReply struct {
 	// XXX:
 	Index int
 	// XXX:
-	MapIsCompleted bool
+	State utils.State
 }
 
 type GetReduceTaskArgs struct{}
@@ -42,9 +42,9 @@ type GetReduceTaskReply struct {
 	// XXX:
 	Addresses []*netip.AddrPort
 	// XXX:
-	Bucket int
-	// XXX
-	ReduceIsCompleted bool
+	Bucket *int
+	// XXX:
+	State utils.State
 }
 
 //

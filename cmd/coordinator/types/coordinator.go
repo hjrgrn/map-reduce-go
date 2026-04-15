@@ -42,6 +42,11 @@ type Coordinator struct {
 // Initializes a Coordinator instance.
 func build_coordinator(files []string, nBuckets int) Coordinator {
 	buckets := make([]*Bucket, nBuckets)
+	for i := range nBuckets {
+		bucket := NewBucket(i)
+		buckets[i] = &bucket
+	}
+
 	tasks := make([]*MapTask, len(files))
 	for i := range files {
 		task := NewMapTask(files[i])

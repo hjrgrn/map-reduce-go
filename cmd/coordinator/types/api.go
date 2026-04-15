@@ -5,6 +5,7 @@ package types
 //
 
 import (
+	"fmt"
 	"mapreduce/pkg/mr"
 	"mapreduce/pkg/utils"
 	"net/netip"
@@ -25,12 +26,12 @@ func (c *Coordinator) CheckHealth(args *mr.CheckHealthArgs, reply *mr.CheckHealt
 
 // XXX: A RPC handler that assisgns a Task to a Worker requiring it.
 func (c *Coordinator) GetMapTask(args *mr.GetMapTaskArgs, reply *mr.GetMapTaskReply) error {
+	c.mutex.Lock()
+	reply.State = c.state
+	defer c.mutex.Unlock()
 	if c.state != utils.Map {
-		reply.MapIsCompleted = true
 		return nil
 	}
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
 
 	n_task := len(c.map_tasks)
 	for i := range n_task {
@@ -40,18 +41,17 @@ func (c *Coordinator) GetMapTask(args *mr.GetMapTaskArgs, reply *mr.GetMapTaskRe
 			reply.Path = element.path
 			reply.Buckets = len(c.buckets)
 			reply.Index = c.map_cursor
-			reply.MapIsCompleted = false
 			return nil
 		}
 	}
 	// No pending tasks
 	c.state = utils.Reduce
-	reply.MapIsCompleted = true
 	return nil
 }
 
 // XXX:
 func (c *Coordinator) GetReduceTask(args *mr.GetReduceTaskArgs, reply *mr.GetReduceTaskReply) error {
+	reply.State = c.state
 	if c.state != utils.Reduce {
 		// TODO:
 		return nil
@@ -63,18 +63,18 @@ func (c *Coordinator) GetReduceTask(args *mr.GetReduceTaskArgs, reply *mr.GetRed
 	n_buckets := len(c.buckets)
 	for i := range n_buckets {
 		c.reduce_cursor = (c.reduce_cursor + i) % n_buckets
-		if c.buckets[i].state == Pending {
+		if c.buckets[c.reduce_cursor].state == Pending {
 			addresses := make([]*netip.AddrPort, len(c.map_tasks))
-			for i, element := range c.map_tasks {
-				addresses[i] = element.addr
+			for j, element := range c.map_tasks {
+				addresses[j] = element.addr
 			}
 			reply.Addresses = addresses
-			reply.Bucket = i
-			reply.ReduceIsCompleted = false
-			return nil
+			reply.Bucket = &c.reduce_cursor
+			// XXX:
+			fmt.Println(c.reduce_cursor)
+			break
 		}
 	}
-	reply.ReduceIsCompleted = false
 
 	return nil
 }
@@ -92,6 +92,16 @@ func (c *Coordinator) MapCompleted(args *mr.MapCompletedArgs, reply *mr.MapCompl
 		return nil
 	}
 	c.map_tasks[args.Index].Done(args.Addr)
+	complete := true
+	for _, task := range c.map_tasks {
+		if task.state == Pending {
+			complete = false
+		}
+	}
+	if complete {
+		c.state = utils.Reduce
+	}
+
 	return nil
 }
 
