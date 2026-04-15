@@ -95,6 +95,16 @@ func CallMapCompleted(index int, addr netip.AddrPort) (mr.MapCompletedReply, boo
 	return reply, ok
 }
 
+// XXX:
+func CallReduceCompleted(bucket int) (mr.ReduceCompletedReply, bool) {
+	args := mr.ReduceCompletedArgs{
+		Bucket: bucket,
+	}
+	reply := mr.ReduceCompletedReply{}
+	ok := call("Coordinator.ReduceCompleted", &args, &reply)
+	return reply, ok
+}
+
 // Send an RPC request to the coordinator and wait for the response.
 // If it fails to contact the coordinator, the program will crash.
 // If something else goes wrong, it returns false.

@@ -60,9 +60,11 @@ func (c *Coordinator) GetReduceTask(args *mr.GetReduceTaskArgs, reply *mr.GetRed
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
+	fmt.Println(c.reduce_cursor)
+
 	n_buckets := len(c.buckets)
 	for i := range n_buckets {
-		c.reduce_cursor = (c.reduce_cursor + i) % n_buckets
+		c.reduce_cursor = (c.reduce_cursor + i + 1) % n_buckets
 		if c.buckets[c.reduce_cursor].state == Pending {
 			addresses := make([]*netip.AddrPort, len(c.map_tasks))
 			for j, element := range c.map_tasks {
@@ -70,8 +72,6 @@ func (c *Coordinator) GetReduceTask(args *mr.GetReduceTaskArgs, reply *mr.GetRed
 			}
 			reply.Addresses = addresses
 			reply.Bucket = &c.reduce_cursor
-			// XXX:
-			fmt.Println(c.reduce_cursor)
 			break
 		}
 	}
@@ -110,13 +110,24 @@ func (c *Coordinator) ReduceCompleted(args *mr.ReduceCompletedArgs, reply *mr.Re
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	index := args.Bucket
-	if 0 < index || index >= len(c.buckets) {
+	if index < 0 || index >= len(c.buckets) {
 		// TODO: hanlde error worker side
 		reply.Failure = true
 		// TODO: maybe return an error
 		return nil
 	}
 	c.buckets[args.Bucket].Done()
+
+	completed := true
+	for _, bucket := range c.buckets {
+		if bucket.state != Done {
+			completed = false
+			break
+		}
+	}
+	if completed {
+		c.state = utils.Completed
+	}
 
 	return nil
 }

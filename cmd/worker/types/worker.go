@@ -204,12 +204,9 @@ func (w *Worker) runReduce(reducef func(string, []string) string) {
 			}
 		}
 		saveFinalFile(final, bucket_id)
-		// FROMHERE: communicate to the coordinator that the file has been saved
-		// XXX:
-		for _, v := range final {
-			fmt.Println(v.Key, v.Value)
-		}
 
+		// TODO: error handling
+		CallReduceCompleted(bucket_id)
 	}
 }
 
