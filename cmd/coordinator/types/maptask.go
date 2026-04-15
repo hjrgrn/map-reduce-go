@@ -23,11 +23,13 @@ func NewMapTask(path string) MapTask {
 type MapTask struct {
 	// Path of the file that will be parsed by a Map Worker
 	// TODO: we are in the same filesystem at the moment
-	// TODO: this field is redundant, take a look at `Coordinator.map_tasks`
 	path mr.MapTaskFilePath
 	// State of the task. It can be `Assigned`, `Unassigned` or `Done`.
 	state TaskState
 	// IP address and port number of the Map Worker that is processing the file.
+	// TODO: since we are always dealing with deterministic tasks, we may have multiple workers working
+	// on  a single MapTask, and so, multiple workers containing the same intermediate files. This field
+	// should probably be of type `[]*netip.AddrPort`.
 	addr *netip.AddrPort
 }
 

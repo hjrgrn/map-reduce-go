@@ -1,11 +1,14 @@
 package types
 
 import (
+	"fmt"
 	"log"
+	"mapreduce/pkg/utils"
 	"net"
 	"net/http"
 	"net/rpc"
 	"sync"
+	"time"
 )
 
 // Manages the main coordination logic for map and reduce tasks.
@@ -17,32 +20,40 @@ type Coordinator struct {
 	// keyed by input file path. Each Map Worker processes one file.
 	map_tasks []*MapTask
 
-	// XXX: The number of intermediate file buckets produced by Map Workers.
+	// The number of intermediate file buckets produced by each Map Workers.
 	// Each Reduce Worker is assigned one bucket and collects the corresponding
 	// intermediate files from all Map Workers.
 	buckets []*Bucket
 
 	// XXX:
-	state CoordinatorState
+	state utils.State
 
 	///XXX:
 	map_cursor int
 
 	//XXX:
 	reduce_cursor int
+
+	// Start time.
+	start_time time.Time
 }
 
 // `MakeCoordinator` helper function.
 // Initializes a Coordinator instance.
 func build_coordinator(files []string, nBuckets int) Coordinator {
 	buckets := make([]*Bucket, nBuckets)
+	for i := range nBuckets {
+		bucket := NewBucket(i)
+		buckets[i] = &bucket
+	}
+
 	tasks := make([]*MapTask, len(files))
 	for i := range files {
 		task := NewMapTask(files[i])
 		tasks[i] = &task
 	}
 
-	return Coordinator{map_tasks: tasks, buckets: buckets}
+	return Coordinator{map_tasks: tasks, buckets: buckets, start_time: time.Now()}
 }
 
 // main calls Done() periodically to find out
@@ -64,6 +75,7 @@ func MakeCoordinator(files []string, buckets int) *Coordinator {
 	// XXX:
 
 	c.server()
+	fmt.Println("Coordinator is online")
 	return &c
 }
 

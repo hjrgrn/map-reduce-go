@@ -36,14 +36,14 @@ func NewBucket(id int) Bucket {
 	// TODO: Path, maybe use "/var/tmp"
 	rand.New(rand.NewSource(time.Now().UnixNano()))
 	// TODO: use path/filepath
-	path := "./instace/" + strconv.Itoa(os.Getegid()) + "-" + strconv.Itoa(id) + "-" + strconv.Itoa(rand.Intn(1000000))
+	path := "./instance/" + strconv.Itoa(os.Getpid()) + "-" + strconv.Itoa(id) + "-" + strconv.Itoa(rand.Intn(1000000))
 	file, err := os.Create(path)
-	writer := csv.NewWriter(file)
-	reader := csv.NewReader(file)
-	// TODO: maybe use encoding/gob
+	// TODO: maybe use encoding/csv
 	if err != nil {
 		fmt.Printf("Fatal error opening a file: %v", err)
 		os.Exit(2)
 	}
+	writer := csv.NewWriter(file)
+	reader := csv.NewReader(file)
 	return Bucket{Id: id, Path: mr.IntermediateFilePath(path), File: file, Writer: writer, Reader: reader}
 }

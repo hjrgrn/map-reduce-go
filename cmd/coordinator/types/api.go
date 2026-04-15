@@ -5,24 +5,33 @@ package types
 //
 
 import (
+	"fmt"
 	"mapreduce/pkg/mr"
+	"mapreduce/pkg/utils"
 	"net/netip"
+	"time"
 )
 
 // an example RPC handler.
-func (c *Coordinator) Example(args *mr.ExampleArgs, reply *mr.ExampleReply) error {
-	reply.Y = args.X + 1
+func (c *Coordinator) CheckHealth(args *mr.CheckHealthArgs, reply *mr.CheckHealthReply) error {
+	c.mutex.Lock()
+	reply.State = c.state
+	c.mutex.Unlock()
+
+	uptime := time.Since(c.start_time)
+
+	reply.Uptime = uptime
 	return nil
 }
 
 // XXX: A RPC handler that assisgns a Task to a Worker requiring it.
 func (c *Coordinator) GetMapTask(args *mr.GetMapTaskArgs, reply *mr.GetMapTaskReply) error {
-	if c.state != Map {
-		reply.MapIsCompleted = true
+	c.mutex.Lock()
+	reply.State = c.state
+	defer c.mutex.Unlock()
+	if c.state != utils.Map {
 		return nil
 	}
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
 
 	n_task := len(c.map_tasks)
 	for i := range n_task {
@@ -32,19 +41,18 @@ func (c *Coordinator) GetMapTask(args *mr.GetMapTaskArgs, reply *mr.GetMapTaskRe
 			reply.Path = element.path
 			reply.Buckets = len(c.buckets)
 			reply.Index = c.map_cursor
-			reply.MapIsCompleted = false
 			return nil
 		}
 	}
 	// No pending tasks
-	c.state = Reduce
-	reply.MapIsCompleted = true
+	c.state = utils.Reduce
 	return nil
 }
 
 // XXX:
 func (c *Coordinator) GetReduceTask(args *mr.GetReduceTaskArgs, reply *mr.GetReduceTaskReply) error {
-	if c.state != Reduce {
+	reply.State = c.state
+	if c.state != utils.Reduce {
 		// TODO:
 		return nil
 	}
@@ -52,21 +60,21 @@ func (c *Coordinator) GetReduceTask(args *mr.GetReduceTaskArgs, reply *mr.GetRed
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
+	fmt.Println(c.reduce_cursor)
+
 	n_buckets := len(c.buckets)
 	for i := range n_buckets {
-		c.reduce_cursor = (c.reduce_cursor + i) % n_buckets
-		if c.buckets[i].state == Pending {
+		c.reduce_cursor = (c.reduce_cursor + i + 1) % n_buckets
+		if c.buckets[c.reduce_cursor].state == Pending {
 			addresses := make([]*netip.AddrPort, len(c.map_tasks))
-			for i, element := range c.map_tasks {
-				addresses[i] = element.addr
+			for j, element := range c.map_tasks {
+				addresses[j] = element.addr
 			}
 			reply.Addresses = addresses
-			reply.Bucket = i
-			reply.ReduceIsCompleted = false
-			return nil
+			reply.Bucket = &c.reduce_cursor
+			break
 		}
 	}
-	reply.ReduceIsCompleted = false
 
 	return nil
 }
@@ -84,6 +92,16 @@ func (c *Coordinator) MapCompleted(args *mr.MapCompletedArgs, reply *mr.MapCompl
 		return nil
 	}
 	c.map_tasks[args.Index].Done(args.Addr)
+	complete := true
+	for _, task := range c.map_tasks {
+		if task.state == Pending {
+			complete = false
+		}
+	}
+	if complete {
+		c.state = utils.Reduce
+	}
+
 	return nil
 }
 
@@ -92,13 +110,24 @@ func (c *Coordinator) ReduceCompleted(args *mr.ReduceCompletedArgs, reply *mr.Re
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	index := args.Bucket
-	if 0 < index || index >= len(c.buckets) {
+	if index < 0 || index >= len(c.buckets) {
 		// TODO: hanlde error worker side
 		reply.Failure = true
 		// TODO: maybe return an error
 		return nil
 	}
 	c.buckets[args.Bucket].Done()
+
+	completed := true
+	for _, bucket := range c.buckets {
+		if bucket.state != Done {
+			completed = false
+			break
+		}
+	}
+	if completed {
+		c.state = utils.Completed
+	}
 
 	return nil
 }
